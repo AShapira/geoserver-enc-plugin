@@ -1,0 +1,21 @@
+{
+  "revision": "8c8d64570a80e0791e3b7c0a1a88f9315eea09e7",
+  "files": {
+    "chartsymbols.xml": {
+      "url": "https://raw.githubusercontent.com/OpenCPN/OpenCPN/8c8d64570a80e0791e3b7c0a1a88f9315eea09e7/data/s57data/chartsymbols.xml",
+      "sha256": "66d2dffad07499811fdbe10ae992c01a220fed7d0163654dd02f14d3f74007b7"
+    },
+    "rastersymbols-day.png": {
+      "url": "https://raw.githubusercontent.com/OpenCPN/OpenCPN/8c8d64570a80e0791e3b7c0a1a88f9315eea09e7/data/s57data/rastersymbols-day.png",
+      "sha256": "ee1020a8b94b312faba8c146974e49147d280e5ef3cc13f3cd688bbfd54dde0c"
+    },
+    "rastersymbols-dusk.png": {
+      "url": "https://raw.githubusercontent.com/OpenCPN/OpenCPN/8c8d64570a80e0791e3b7c0a1a88f9315eea09e7/data/s57data/rastersymbols-dusk.png",
+      "sha256": "56d6191b954978d0a85484b490228aab467610bfbf646c814af003428a766c2d"
+    },
+    "rastersymbols-dark.png": {
+      "url": "https://raw.githubusercontent.com/OpenCPN/OpenCPN/8c8d64570a80e0791e3b7c0a1a88f9315eea09e7/data/s57data/rastersymbols-dark.png",
+      "sha256": "179cb516fd1a7795e8ab9ecbb8d4d5d88bf15cf42e5528c2f4e3ea2340320c33"
+    }
+  }
+}

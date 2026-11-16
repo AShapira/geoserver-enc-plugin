@@ -1,0 +1,91 @@
+{
+  "date": "2026-11-13",
+  "geoserver": "3.0.2",
+  "geotools": "35.2",
+  "gdal": "3.11.5",
+  "java_runtime": "21.0.10",
+  "java_release_target": 17,
+  "java_tests": [
+    {
+      "name": "org.enc.geoserver.GdalCacheTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "org.enc.geoserver.S57IntegrationTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ],
+  "python_tests_passed": 7,
+  "protocols": {
+    "day": {
+      "layer": "noaa:chart_day",
+      "bbox": [
+        -73.725,
+        40.575,
+        -73.65,
+        40.65
+      ],
+      "wms_overview_seconds": 0.423,
+      "wms_1_1_1_vs_1_3_0_pixels_equal": true,
+      "wms_3857": true,
+      "concurrent_wms_requests": 4,
+      "wmts_tile_url": "http://127.0.0.1:18080/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=noaa%3Achart_day&STYLE=&FORMAT=image%2Fpng&TILEMATRIXSET=EPSG%3A900913&TILEMATRIX=EPSG%3A900913%3A14&TILEROW=6166&TILECOL=4838",
+      "wfs_split_soundings": 5,
+      "wms_sha256": "df7003ee8aa0f518f66a9a133763e1d31fcff1464b88ec86c877d403beeaf494",
+      "wmts_sha256": "854f8a0cd44ab2440f3aa22bbf4941d242d6fc85bef77411a3ed07aad5e1d55c",
+      "wmts_cache_sequence": [
+        "MISS",
+        "HIT"
+      ]
+    },
+    "dusk": {
+      "layer": "noaa:chart_dusk",
+      "bbox": [
+        -73.725,
+        40.575,
+        -73.65,
+        40.65
+      ],
+      "wms_overview_seconds": 0.412,
+      "wms_1_1_1_vs_1_3_0_pixels_equal": true,
+      "wms_3857": true,
+      "concurrent_wms_requests": 4,
+      "wmts_tile_url": "http://127.0.0.1:18080/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=noaa%3Achart_dusk&STYLE=&FORMAT=image%2Fpng&TILEMATRIXSET=EPSG%3A900913&TILEMATRIX=EPSG%3A900913%3A14&TILEROW=6166&TILECOL=4838",
+      "wfs_split_soundings": 5,
+      "wms_sha256": "6ec58e749d55045edc3a3dcc3f42a3a91d7500f4cca5b9ba0f91205f77c798d2",
+      "wmts_sha256": "fbb9af982e4db2f2c133a2c7d8f133b1df9915b3d72d2f8ad93ee2cb286191f7",
+      "wmts_cache_sequence": [
+        "MISS",
+        "HIT"
+      ]
+    },
+    "night": {
+      "layer": "noaa:chart_night",
+      "bbox": [
+        -73.725,
+        40.575,
+        -73.65,
+        40.65
+      ],
+      "wms_overview_seconds": 0.452,
+      "wms_1_1_1_vs_1_3_0_pixels_equal": true,
+      "wms_3857": true,
+      "concurrent_wms_requests": 4,
+      "wmts_tile_url": "http://127.0.0.1:18080/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=noaa%3Achart_night&STYLE=&FORMAT=image%2Fpng&TILEMATRIXSET=EPSG%3A900913&TILEMATRIX=EPSG%3A900913%3A14&TILEROW=6166&TILECOL=4838",
+      "wfs_split_soundings": 5,
+      "wms_sha256": "ba3f3ca32a6b53195152383e1498c4556877c9db5a3e79ca789ebf90514fde9c",
+      "wmts_sha256": "9ea05d2b8f1a81af48d1eb9a0c0177975a8f5bb8257432a97ea420304b3c2c70",
+      "wmts_cache_sequence": [
+        "MISS",
+        "HIT"
+      ]
+    }
+  },
+  "plugin_sha256": "ea13c3929f299defbcecb9e472f01be70569b9ce04bf6c58aba870b00339136e"
+}

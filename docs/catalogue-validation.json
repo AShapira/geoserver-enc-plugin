@@ -1,0 +1,177 @@
+{
+  "new-york": {
+    "bbox": [
+      -74.06,
+      40.6,
+      -73.94,
+      40.75
+    ],
+    "wms_seconds": 3.618,
+    "png_bytes": 319779
+  },
+  "san-francisco": {
+    "bbox": [
+      -122.55,
+      37.74,
+      -122.32,
+      37.88
+    ],
+    "wms_seconds": 5.983,
+    "png_bytes": 330975
+  },
+  "chesapeake": {
+    "bbox": [
+      -76.5,
+      36.88,
+      -76.2,
+      37.12
+    ],
+    "wms_seconds": 4.34,
+    "png_bytes": 213971
+  },
+  "chicago": {
+    "bbox": [
+      -87.68,
+      41.77,
+      -87.48,
+      41.97
+    ],
+    "wms_seconds": 1.679,
+    "png_bytes": 277944
+  },
+  "seattle": {
+    "bbox": [
+      -122.48,
+      47.52,
+      -122.28,
+      47.72
+    ],
+    "wms_seconds": 5.024,
+    "png_bytes": 253606
+  },
+  "alaska": {
+    "bbox": [
+      -150.13,
+      61.1,
+      -149.75,
+      61.35
+    ],
+    "wms_seconds": 1.385,
+    "png_bytes": 170582
+  },
+  "hawaii": {
+    "bbox": [
+      -157.97,
+      21.24,
+      -157.79,
+      21.39
+    ],
+    "wms_seconds": 2.607,
+    "png_bytes": 221875
+  },
+  "guam": {
+    "bbox": [
+      144.59,
+      13.38,
+      144.75,
+      13.53
+    ],
+    "wms_seconds": 1.449,
+    "png_bytes": 199641
+  },
+  "overview": {
+    "bbox": [
+      -130,
+      22,
+      -60,
+      52
+    ],
+    "wms_seconds": 2.948,
+    "png_bytes": 101106
+  },
+  "wmts-day": {
+    "url": "http://127.0.0.1:18080/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=noaa%3Achart_day&STYLE=&FORMAT=image%2Fpng&TILEMATRIXSET=EPSG%3A900913&TILEMATRIX=EPSG%3A900913%3A13&TILEROW=3080&TILECOL=2411",
+    "first_seconds": 2.884,
+    "second_result": "HIT"
+  },
+  "wmts-dusk": {
+    "url": "http://127.0.0.1:18080/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=noaa%3Achart_dusk&STYLE=&FORMAT=image%2Fpng&TILEMATRIXSET=EPSG%3A900913&TILEMATRIX=EPSG%3A900913%3A13&TILEROW=3080&TILECOL=2411",
+    "first_seconds": 1.164,
+    "second_result": "HIT"
+  },
+  "wmts-night": {
+    "url": "http://127.0.0.1:18080/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=noaa%3Achart_night&STYLE=&FORMAT=image%2Fpng&TILEMATRIXSET=EPSG%3A900913&TILEMATRIX=EPSG%3A900913%3A13&TILEROW=3080&TILECOL=2411",
+    "first_seconds": 1.152,
+    "second_result": "HIT"
+  },
+  "wms_axis_order_equal": true,
+  "date": "2026-11-15",
+  "java_tests": {
+    "passed": 14,
+    "skipped": 0
+  },
+  "python_tests": {
+    "passed": 7
+  },
+  "browser": {
+    "browser": "Chromium 1248 headless Linux",
+    "js_errors": [],
+    "http_errors": [],
+    "after_restart": true,
+    "checks": [
+      "New York WMTS",
+      "San Francisco WMTS",
+      "San Francisco WMS",
+      "Night WMS",
+      "National overview WMS"
+    ]
+  },
+  "windows": {
+    "viewer": {
+      "url": "http://127.0.0.1:18080/enc.html",
+      "bytes": 4888,
+      "passed": true,
+      "after_restart": true
+    },
+    "wms": {
+      "url": "http://127.0.0.1:18080/geoserver/wms?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0&LAYERS=noaa%3Achart_day&CRS=EPSG%3A4326&BBOX=40.6%2C-74.06%2C40.75%2C-73.94&WIDTH=800&HEIGHT=600&FORMAT=image%2Fpng",
+      "bytes": 319779,
+      "passed": true,
+      "after_restart": true
+    },
+    "wmts": {
+      "url": "http://127.0.0.1:18080/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=noaa%3Achart_day&STYLE=&FORMAT=image%2Fpng&TILEMATRIXSET=EPSG%3A900913&TILEMATRIX=EPSG%3A900913%3A13&TILEROW=3080&TILECOL=2411",
+      "bytes": 87971,
+      "passed": true,
+      "after_restart": true
+    }
+  },
+  "container_image": "f6836a3292dd16b86965c399f1357ef42f0b96939eed07a471124fdc07e57623",
+  "plugin_jar_sha256": "6fab734a7dfaead8abe4fb35d1a3ff9f60c691a060e4288b0c8da234c9a04ddd",
+  "image_sha256": {
+    "wmts-dusk.png": "84ac9927e86fe21c060d93737f91908ef6cf6386649a15fd496542cc8cb8938f",
+    "wmts-night.png": "a3d77a9f1ba4b84c75052dda47f924584bfac543664c079552b0018e9e400e41",
+    "windows-wms.png": "177c2ace24fe3620e19fcefd1219e1d79e3b41f74be8e88f253f518acefeb1f0",
+    "seattle.png": "78b3fe305562e483c86e2bbfbc2060e839b421dc3edd87a17eb3bcba9270c396",
+    "viewer.png": "4073d9c0b10808e3fa6637915cdf7b74f8f8a487d77dac1aacab14e7b7b4ef50",
+    "new-york.png": "177c2ace24fe3620e19fcefd1219e1d79e3b41f74be8e88f253f518acefeb1f0",
+    "guam.png": "d5bf38b3620a70d4d2595b9f68036bf1b894067103b506a3d8b3c89458b47b12",
+    "wmts-day.png": "589baa2fbec19777254c4e090285e35a4a3897b8012ff0ffd763ccd67d6d5b55",
+    "alaska.png": "3eb7294496fc8d9dc43696b9ec0808a2477cf14294dfa9139d7e8a51157fcb26",
+    "overview.png": "26b31903957fd389adf758b0a54968d9d337e393132bfe1d52c1f24076de74f0",
+    "chesapeake.png": "20b3242a772a286f4580ea01c5acd478f6fa556837450fa2f07eb821da5c3545",
+    "viewer-night.png": "3fa7d344b7cfe95b740011349249ed9f249d3bde2aa816b7f090e91fe53aef22",
+    "san-francisco.png": "c0066354f7192f35b4a5f293af9022bd226f1b39e1e601c72b5fd8e40cb7fcbf",
+    "chicago.png": "6c22643cb3b5019406f37cadcddf23fb8a4940b64983536ea7813737da0a6673",
+    "hawaii.png": "272f5b3ebf1ae6b4c3702ffdc83081c1b2225d59d69b51ea13551018085ec6a2"
+  },
+  "restart": {
+    "passed": true,
+    "seconds_to_chart_capabilities": 36.25,
+    "data_volumes_retained": true,
+    "initial_restart_error": "Transient pasta port bind: Address already in use",
+    "recovery": "podman start geoserver-enc after old listener exited"
+  },
+  "container_id": "a33b21f52876f16ebf8e41f3f4d079cb38b25673aec4233597d67dcf62b7204c",
+  "container_health": "healthy"
+}

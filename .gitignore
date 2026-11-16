@@ -1,0 +1,21 @@
+.runtime/
+target/
+data/
+__pycache__/
+*.pyc
+.env
+evidence/*.png
+evidence/*.xml
+evidence/*.json
+portrayal/generated/
+portrayal/generated-*/
+evidence/night/
+evidence/dusk/
+dist/
+evidence/catalogue/
+# Local validation captures, profiler recordings and workstation logs.
+evidence/
+**/bin/
+**/obj/
+*.user
+*.suo

@@ -1,0 +1,11 @@
+{
+  "checked_cells": 7114,
+  "failures": [],
+  "checks": [
+    "matching cache fingerprint",
+    "DSID edition and update match catalogue",
+    "SQLite quick_check"
+  ],
+  "gdal": "GDAL 3.8.4, released 2024/02/08",
+  "seconds": 130.26
+}

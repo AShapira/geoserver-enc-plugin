@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NOAA ENC · GeoServer</title><link rel="stylesheet" href="/geoserver/openlayers10/ol.css">
+<style>
+:root{font:14px system-ui,sans-serif;color:#dfeaf1;background:#10212c}*{box-sizing:border-box}body{margin:0}header{height:76px;display:flex;align-items:center;gap:22px;padding:12px 22px;border-bottom:1px solid #304653}h1{font-size:21px;margin:0 0 3px;letter-spacing:.03em}small{color:#9eb4c1}label{display:flex;flex-direction:column;gap:5px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#a7bdca}select{font:14px system-ui;color:#eaf1f5;background:#203743;border:1px solid #3c5867;border-radius:4px;padding:7px 28px 7px 10px}#map{height:calc(100dvh - 111px);background:#d4eaee}footer{height:35px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:12px;color:#a7bdca}a{color:#9ed5ed}.brand{margin-right:auto}#status.error{color:#ffb0a8}.ol-scale-line{background:#10212ccc}.ol-zoom{top:16px;left:16px}.ol-control button{background:#203743;color:white}@media(max-width:700px){header{height:auto;flex-wrap:wrap;gap:10px}.brand{width:100%}#map{height:calc(100dvh - 175px)}footer{font-size:10px;padding:0 8px}}
+</style></head><body>
+<header><div class="brand"><h1>NOAA ENC</h1><small>Full active catalogue · S-57 / S-52 portrayal</small></div>
+<label>Region<select id="region"><option value="ny">New York Harbor</option><option value="sf">San Francisco Bay</option><option value="chesapeake">Chesapeake Bay</option><option value="lakes">Great Lakes · Chicago</option><option value="seattle">Puget Sound · Seattle</option><option value="alaska">Alaska · Anchorage</option><option value="hawaii">Hawaii · Honolulu</option><option value="guam">Guam · Apra Harbor</option><option value="us">United States overview</option></select></label>
+<label>Palette<select id="palette"><option value="day">Day</option><option value="dusk">Dusk</option><option value="night">Night</option></select></label>
+<label>Service<select id="service"><option value="WMTS">WMTS tiles</option><option value="WMS">WMS image</option></select></label></header>
+<div id="map" aria-label="Interactive NOAA nautical chart"></div>
+<footer><span id="status">Loading chart…</span><span>Experimental portrayal · <a href="/geoserver/">GeoServer</a> · <a href="/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetCapabilities">WMTS</a></span></footer>
+<script src="/geoserver/openlayers10/ol.js"></script><script>
+const regions={ny:[-74.01,40.69,13],sf:[-122.43,37.81,12],chesapeake:[-76.39,37.00,11],lakes:[-87.57,41.88,12],seattle:[-122.38,47.62,12],alaska:[-149.94,61.23,11],hawaii:[-157.88,21.30,13],guam:[144.66,13.45,13],us:[-98,38,4]};
+const view=new ol.View({center:ol.proj.fromLonLat(regions.ny.slice(0,2)),zoom:regions.ny[2],minZoom:2,maxZoom:20});
+const map=new ol.Map({target:'map',view,controls:ol.control.defaults.defaults().extend([new ol.control.ScaleLine({units:'nautical'})])});
+let current,loading=0,failed=false;const status=document.getElementById('status');
+function start(){loading++;if(!failed)status.textContent='Loading chart…';}
+function end(){loading=Math.max(0,loading-1);if(!failed&&loading===0)status.textContent='Drag to pan · Scroll to zoom · All active NOAA cells available';}
+function error(){failed=true;loading=Math.max(0,loading-1);status.className='error';status.textContent='Chart request failed. Try another zoom or reload.';}
+function source(){if(current)map.removeLayer(current);loading=0;failed=false;status.className='';const palette=document.getElementById('palette').value;
+if(document.getElementById('service').value==='WMTS'){
+ const resolutions=Array.from({length:23},(_,z)=>156543.03392804097/2**z);
+ const grid=new ol.tilegrid.WMTS({origin:[-20037508.342789244,20037508.342789244],resolutions,matrixIds:resolutions.map((_,z)=>'EPSG:900913:'+z)});
+ const s=new ol.source.WMTS({url:'/geoserver/gwc/service/wmts',layer:'noaa:chart_'+palette,matrixSet:'EPSG:900913',format:'image/png',style:'',projection:'EPSG:3857',tileGrid:grid,wrapX:true});
+ s.on('tileloadstart',start);s.on('tileloadend',end);s.on('tileloaderror',error);current=new ol.layer.Tile({source:s});
+}else{const s=new ol.source.ImageWMS({url:'/geoserver/wms',params:{LAYERS:'noaa:chart_'+palette,FORMAT:'image/png',VERSION:'1.1.1'},ratio:1,serverType:'geoserver'});s.on('imageloadstart',start);s.on('imageloadend',end);s.on('imageloaderror',error);current=new ol.layer.Image({source:s});}
+map.addLayer(current);end();}
+document.getElementById('region').onchange=e=>{const r=regions[e.target.value];view.animate({center:ol.proj.fromLonLat(r.slice(0,2)),zoom:r[2],duration:350});};
+document.getElementById('palette').onchange=source;document.getElementById('service').onchange=source;source();
+</script></body></html>
