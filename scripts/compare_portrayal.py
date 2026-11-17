@@ -29,7 +29,8 @@ def metrics(reference,candidate,key):
 
 def run(root=ROOT):
     results={}
-    for key in CASES:
+    cases=CASES+(['quality'] if (root/'reference-quality/scene.json').exists() else [])
+    for key in cases:
         reference=Image.open(root/f'reference-{key}/opencpn.png')
         scene=json.loads((root/f'reference-{key}/scene.json').read_text())
         entry={'scene':scene,'after':metrics(reference,Image.open(root/f'after/{key}.png'),key)}
@@ -41,13 +42,14 @@ def run(root=ROOT):
 <style>body{font:16px system-ui;margin:24px;background:#15202b;color:#edf2f7}a{color:#9ed6ff}select,input,button{font:inherit}#view{position:relative;max-width:1278px;aspect-ratio:1278/936}#view img{position:absolute;width:100%;height:100%;inset:0}#revision{clip-path:inset(0 0 0 50%)}#split{width:min(100%,1278px)}pre{white-space:pre-wrap}label{margin-right:20px}</style>
 <h1>NOAA ENC · OpenCPN versus GeoServer</h1>
 <p>Actual OpenCPN 5.12.4 screenshots and WMS renders of identical NOAA cells. Left: OpenCPN. Right: revised GeoServer. Drag to compare.</p>
-<p><label>Scene <select id="scene"><option value="day">New York · day</option><option value="detail">New York · soundings detail</option><option value="dusk">New York · dusk</option><option value="night">New York · night</option><option value="sectors">San Clemente · extinguished light</option><option value="light">Humboldt Bay · sector lights</option></select></label><button id="baseline">Show before</button></p>
+<p><label>Scene <select id="scene"><option value="day">New York · day</option><option value="detail">New York · soundings detail</option><option value="dusk">New York · dusk</option><option value="night">New York · night</option><option value="sectors">San Clemente · extinguished light</option><option value="light">Humboldt Bay · sector lights</option>QUALITY_OPTION</select></label><button id="baseline">Show before</button></p>
 <input id="split" type="range" min="0" max="100" value="50" aria-label="Comparison split">
 <div id="view"><img id="reference" alt="OpenCPN reference"><img id="revision" alt="GeoServer render"></div>
 <p id="links"></p><pre id="numbers"></pre>
-<p>Metrics exclude fixed viewer controls and outer margins. The San Clemente comparison also excludes the area outside the ENC. They measure this screenshot corpus, not S-52 compliance. Differences remain in labels, conditional shared-edge priority, spatial quality and isolated dangers.</p>
+<p>Metrics exclude fixed viewer controls and outer margins. The San Clemente comparison also excludes the area outside the ENC. They measure this screenshot corpus, not S-52 compliance. Differences remain in labels, complex-line placement, quality procedures and isolated dangers. The revised renderer implements restriction and safety-contour priorities; some safety/quality choices intentionally differ from OpenCPN.</p>
 <p><a href="comparison.json">Full measurements and WMS requests</a> · <a href="../../docs/portrayal-comparison.md">Method and limitations</a></p>
 <script>const data=DATA;let before=false;const scene=document.querySelector('#scene'),rev=document.querySelector('#revision'),ref=document.querySelector('#reference');function show(){const k=scene.value;before=before&&!!data[k].before;ref.src=`reference-${k}/opencpn.png`;rev.src=`${before?'before':'after'}/${k}.png`;document.querySelector('#baseline').disabled=!data[k].before;document.querySelector('#baseline').textContent=before?'Show revised':'Show before';document.querySelector('#numbers').textContent=JSON.stringify({cell:data[k].scene.cell,view:before?'before':'revised',metrics:data[k][before?'before':'after']},null,2);document.querySelector('#links').innerHTML=`<a href="${ref.src}">Full OpenCPN image</a> · <a href="${rev.src}">Full GeoServer image</a>`;}scene.onchange=show;document.querySelector('#baseline').onclick=()=>{before=!before;show()};document.querySelector('#split').oninput=e=>{rev.style.clipPath=`inset(0 0 0 ${e.target.value}%)`};show();</script>'''.replace('DATA',json.dumps(results))
+    html=html.replace('QUALITY_OPTION','<option value="quality">San Clemente · quality close-up (overscaled)</option>' if 'quality' in results else '')
     (root/'comparison.html').write_text(html)
     print(json.dumps({k:{v:m for v,m in d.items() if v!='scene'} for k,d in results.items()},indent=2))
 

@@ -2,7 +2,7 @@
 
 A read-only **GeoServer 3.0.2 / GeoTools 35.2** plugin backed by GDAL's S57 reader. One catalogue store serves the **entire active NOAA ENC catalogue** through WMS and GeoWebCache WMTS. It indexes actual chart coverage, selects cells by scale and clips overlapping coverage. Adjacent updates are applied to immutable, indexed GeoPackage snapshots. Single `.000` stores remain supported.
 
-The supplied portrayal compiler uses pinned OpenCPN S-52 colours, raster symbols, lookup tables, and HPGL patterns/lines. It supplies depth bands, selected safety contours, compound sounding glyphs, light sectors/characteristics, topmarks, formatted labels, scale filtering, and day/dusk/night presets. Versioned [native edge metadata](docs/edge-metadata.md) handles shared-edge ownership, masks and precomputed lookup selection. **Portrayal is experimental and incomplete; this is not an ECDIS implementation or a claim of S-52 conformance.** See [portrayal coverage](docs/portrayal.md) and the [latest OpenCPN comparison and CPU/RAM/disk measurements](docs/optimization-2026-11-16.md).
+The supplied portrayal compiler uses pinned OpenCPN S-52 colours, raster symbols, lookup tables, and HPGL patterns/lines. It supplies depth bands, selected safety contours, compound sounding glyphs, light sectors/characteristics, topmarks, formatted labels, scale filtering, and day/dusk/night presets. Versioned [native edge metadata](docs/edge-metadata.md) handles conditional shared-edge priorities, masks, spatial-quality segments and precomputed lookup selection. **Portrayal is experimental and incomplete; this is not an ECDIS implementation or a claim of S-52 conformance.** See [portrayal coverage](docs/portrayal.md) and the [latest OpenCPN comparison and CPU/RAM/disk measurements](docs/portrayal-2026-11-17.md).
 
 ## Try the NOAA demo
 
@@ -90,7 +90,7 @@ The bootstrap preserves an existing demo data directory. Stop the foreground ser
 | `timeout` | Import timeout in seconds; default 300 |
 | `namespace` | Optional feature namespace URI |
 | `cellPoolSize` | Catalogue JDBC store pool target; default 16, demo 32; active readers remain leased |
-| `safetyDepth` | Catalogue safety depth in metres; default 5; must match the generated portrayal setting |
+| `safetyDepth` | Safety depth in metres, in cell and catalogue modes; default 5; must match the generated portrayal setting |
 
 4. Publish object classes in the GeoServer UI, or use `scripts/publish.py` to generate and install the complete ordered chart group. The publisher requires GDAL Python bindings, Pillow, REST administrator credentials, and filesystem access to the server's data directory for symbol assets. It manages one catalogue or single-cell store per workspace. To prepare a catalogue, download `ENCProdCat.xml` and `All_ENCs.zip` from NOAA, then run:
 
@@ -129,7 +129,7 @@ Old snapshot files are retained intentionally. Remove obsolete generations only 
 
 ## Verify and package
 
-The container demo also precomputes native topology/lookup sidecars for the full catalogue, applies a 2 GiB LRU tile quota, and seeds two bounded operating regions (New York and San Francisco, zooms 11–13, all palettes). `scripts/tune_cache.py` prints its plan by default; changes require `--apply` (including a configuration reload to activate the persisted quota), and seeding additionally requires `--seed`. New demo containers use 6 GiB RAM (`ENC_MEMORY` overrides this), the existing 3 GiB Java heap, and four simultaneous ENC renders (`-Denc.maxConcurrentRenders` overrides this). See [metadata and cache contracts](docs/edge-metadata.md) and [measured results](docs/optimization-2026-11-16.md).
+The container demo also precomputes native topology/lookup sidecars for the full catalogue, applies a 2 GiB LRU tile quota, and seeds two bounded operating regions (New York and San Francisco, zooms 11–13, all palettes). `scripts/tune_cache.py` prints its plan by default; changes require `--apply` (including a configuration reload to activate the persisted quota), and seeding additionally requires `--seed`. New demo containers use 6 GiB RAM (`ENC_MEMORY` overrides this), the existing 3 GiB Java heap, and four simultaneous ENC renders (`-Denc.maxConcurrentRenders` overrides this). See [metadata and cache contracts](docs/edge-metadata.md) and [measured results](docs/portrayal-2026-11-17.md).
 
 ```bash
 # Fetch an additional cell with a real .001 update, then enable native integration tests:

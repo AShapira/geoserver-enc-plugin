@@ -20,9 +20,10 @@ final class S57DataStore extends ContentDataStore {
     private final DataStore delegate;
     private AtonContext context;
     private final Path metadataFile;
+    private final double safetyDepth;
     private EdgeContext metadata;
     private synchronized EdgeContext metadata() throws IOException {
-        if(metadata==null&&metadataFile!=null)metadata=new EdgeContext(metadataFile);
+        if(metadata==null&&metadataFile!=null)metadata=new EdgeContext(metadataFile,safetyDepth);
         return metadata;
     }
     private synchronized AtonContext context() throws IOException {
@@ -30,7 +31,12 @@ final class S57DataStore extends ContentDataStore {
         return context;
     }
     S57DataStore(DataStore delegate) { this(delegate,null); }
-    S57DataStore(DataStore delegate,Path metadataFile) { this.delegate = Objects.requireNonNull(delegate);this.metadataFile=metadataFile; }
+    S57DataStore(DataStore delegate,Path metadataFile) {this(delegate,metadataFile,5);}
+    S57DataStore(DataStore delegate,Path metadataFile,double safetyDepth) { this.delegate = Objects.requireNonNull(delegate);this.metadataFile=metadataFile;this.safetyDepth=safetyDepth; }
+    static void addPortrayalFields(SimpleFeatureTypeBuilder builder){
+        builder.add("_enc_line",Geometry.class);builder.add("_enc_line_normal",Geometry.class);builder.add("_enc_line_quality",Geometry.class);
+        builder.add("_enc_lookup",Integer.class);builder.add("_enc_priority",Integer.class);builder.add("_enc_safety",Integer.class);builder.add("_enc_quapos",Integer.class);
+    }
 
     @Override protected List<Name> createTypeNames() throws IOException {
         List<Name> names = new ArrayList<>();
@@ -49,7 +55,7 @@ final class S57DataStore extends ContentDataStore {
                 if(!enriched) return schema;
                 var builder=new SimpleFeatureTypeBuilder();builder.init(schema);
                 if(topmark) builder.add("_enc_floating",Integer.class);
-                if(boundary){builder.add("_enc_line",Geometry.class,schema.getCoordinateReferenceSystem());builder.add("_enc_lookup",Integer.class);}
+                if(boundary)addPortrayalFields(builder);
                 return builder.buildFeatureType();
             }
             @Override protected ReferencedEnvelope getBoundsInternal(Query query) throws IOException {
@@ -80,8 +86,12 @@ final class S57DataStore extends ContentDataStore {
                         if(topmark) builder.set("_enc_floating",parents.floating((Geometry)original.getDefaultGeometry()));
                         if(boundary){
                             int rcid=((Number)original.getAttribute("RCID")).intValue();
+                            Geometry geometry=(Geometry)original.getDefaultGeometry();String type=entry.getTypeName();
                             builder.set("_enc_lookup",edges.lookup(entry.getTypeName(),rcid));
-                            builder.set("_enc_line",edges.line(entry.getTypeName(),rcid,scale,(Geometry)original.getDefaultGeometry()));
+                            builder.set("_enc_priority",edges.priority(type,rcid));builder.set("_enc_safety",edges.safety(type,rcid));
+                            builder.set("_enc_quapos",edges.pointQuality(type,rcid,geometry));
+                            var lines=edges.lines(type,rcid,scale,geometry);
+                            builder.set("_enc_line",lines.all());builder.set("_enc_line_normal",lines.normal());builder.set("_enc_line_quality",lines.lowAccuracy());
                         }
                         var f=builder.buildFeature(original.getID());if(query.getFilter().evaluate(f))next=f;
                       }

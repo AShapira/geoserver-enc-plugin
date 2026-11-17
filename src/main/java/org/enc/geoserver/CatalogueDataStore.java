@@ -49,7 +49,7 @@ final class CatalogueDataStore extends ContentDataStore {
             }
             builder.add("_enc_cell",String.class);builder.add("_enc_cscl",Integer.class);builder.add("_enc_safety_contour",Double.class);
             if(entry.getKey().equals("TOPMAR")) builder.add("_enc_floating",Integer.class);
-            builder.add("_enc_line",Geometry.class);builder.add("_enc_lookup",Integer.class);
+            S57DataStore.addPortrayalFields(builder);
             schemas.put(entry.getKey(),builder.buildFeatureType());
         }
     }
@@ -64,7 +64,7 @@ final class CatalogueDataStore extends ContentDataStore {
             // Small pools per cell; total number of retained cell stores is bounded.
             params.put("max connections",2);params.put("min connections",0);
             Path metadata=EdgeCache.materialize(cell.source(),snapshot,executable,timeout);
-            lease=new Lease(new S57DataStore(new GeoPkgDataStoreFactory().createDataStore(params),metadata));pool.put(cell.name(),lease);
+            lease=new Lease(new S57DataStore(new GeoPkgDataStoreFactory().createDataStore(params),metadata,safety));pool.put(cell.name(),lease);
         }
         lease.readers++;evict();return lease;
     }
@@ -155,9 +155,15 @@ final class CatalogueDataStore extends ContentDataStore {
                         double contour=selection.cell().safetyContour(safety);
                         builder.set("_enc_safety_contour",Double.isNaN(contour)?null:contour);
                         if(selection.visible()!=null) {
-                            Geometry line=(Geometry)original.getAttribute("_enc_line");
-                            if(line!=null && !line.isEmpty() && !selection.preparedVisible().covers(line))
-                                builder.set("_enc_line",CatalogueIndex.overlay(line,selection.visible(),OverlayNG.INTERSECTION));
+                            var clipped=new IdentityHashMap<Geometry,Geometry>();
+                            for(String field:List.of("_enc_line","_enc_line_normal","_enc_line_quality")) {
+                                Geometry line=(Geometry)original.getAttribute(field);
+                                if(line!=null&&!line.isEmpty()) {
+                                    Geometry value=clipped.get(line);
+                                    if(value==null){value=selection.preparedVisible().covers(line)?line:CatalogueIndex.overlay(line,selection.visible(),OverlayNG.INTERSECTION);clipped.put(line,value);}
+                                    builder.set(field,value);
+                                }
+                            }
                         }
                         SimpleFeature feature=builder.buildFeature(selection.cell().name()+"."+original.getID());
                         if(query.getFilter().evaluate(feature)) {next=feature;return true;}

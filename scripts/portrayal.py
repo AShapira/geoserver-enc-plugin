@@ -22,6 +22,8 @@ ROOT = Path(__file__).resolve().parents[1]
 PRIORITIES = {'No data': 0, 'Group 1': 1, 'Area 1': 2, 'Area 2': 3,
               'Point Symbol': 4, 'Line Symbol': 5, 'Area Symbol': 6,
               'Routing': 7, 'Hazards': 8, 'Mariners': 9}
+PORTRAYAL_FIELDS = {'_enc_line':'Geometry','_enc_line_normal':'Geometry','_enc_line_quality':'Geometry',
+                    '_enc_lookup':'Integer','_enc_priority':'Integer','_enc_safety':'Integer','_enc_quapos':'Integer'}
 
 
 def node(tag, text=None, *children, ns=SLD, **attrs):
@@ -189,6 +191,12 @@ class Compiler:
     def conditional(self, command, cls, geom, fields):
         """Return (additional filter, symbolizers) variants. Explicit approximations."""
         eq = lambda field, val: cmp('EqualTo', prop(field), lit(val))
+        quality_field = '_enc_quapos' if '_enc_quapos' in fields else 'QUAPOS'
+        def quality_lines(normal, low):
+            if '_enc_line_quality' not in fields: return normal
+            for symbol in normal: symbol.insert(0,node('Geometry',None,prop('_enc_line_normal')))
+            low.insert(0,node('Geometry',None,prop('_enc_line_quality')))
+            return normal+[low]
         if command == 'DEPARE01':
             if geom != 'Area': return [(None,[self.line('DEPCN')])]
             bounds = [(-1e9,0,'DEPIT'),(0,self.shallow,'DEPVS'),(self.shallow,self.safety,'DEPMS'),(self.safety,self.deep,'DEPMD'),(self.deep,1e9,'DEPDW')]
@@ -202,11 +210,12 @@ class Compiler:
             return result
         if command == 'DEPCNT02':
             field = 'VALDCO' if 'VALDCO' in fields else 'DRVAL1'
-            f = cmp('EqualTo',prop(field),prop('_enc_safety_contour')) if '_enc_safety_contour' in fields else eq(field,self.contour)
-            return [(f,[self.line('DEPSC',3)]),(either(null(field),negate(f)),[self.line('DEPCN',1)])]
+            f = eq('_enc_safety',1) if '_enc_safety' in fields else cmp('EqualTo',prop(field),prop('_enc_safety_contour')) if '_enc_safety_contour' in fields else eq(field,self.contour)
+            return [(f,quality_lines([self.line('DEPSC',2)],self.line('DEPSC',2,'DASH'))),
+                    (either(null(field),negate(f)),quality_lines([self.line('DEPCN',1)],self.line('DEPCN',1,'DASH')))]
         if command == 'SOUNDG02':
             return [(None,[self.native('sounding',fields,depth='DEPTH',safety=self.safety,
-                tecsou='TECSOU',quasou='QUASOU',quapos='QUAPOS',status='STATUS')])]
+                tecsou='TECSOU',quasou='QUASOU',quapos=quality_field,status='STATUS')])]
         if command.startswith('LIGHTS'):
             graphic=self.native('light',fields,colour='COLOUR',catlit='CATLIT',sector1='SECTR1',sector2='SECTR2',
                 range='VALNMR',orientation='ORIENT',visibility='LITVIS')
@@ -216,15 +225,35 @@ class Compiler:
             return [(None,[graphic,self.text(label,placement=(0,1,2,-1))])]
         if command.startswith('WRECKS') and geom=='Point':
             graphic=self.native('wreck',fields,depth='VALSOU',safety=self.safety,category='CATWRK',water='WATLEV',
-                tecsou='TECSOU',quasou='QUASOU',quapos='QUAPOS',status='STATUS')
+                tecsou='TECSOU',quasou='QUASOU',quapos=quality_field,status='STATUS')
             self.issues.add('WRECKS02: attribute-based symbols/depth; surrounding-depth isolated-danger promotion incomplete')
             return [(negate(null('VALSOU')),[graphic,self.text(lit('Wk'),placement=(0,0,2,0))]),(null('VALSOU'),[graphic])]
         if command.startswith('WRECKS') or command.startswith('OBSTRN'):
             self.issues.add(command + ': conservative danger symbol; surrounding-depth and water-level procedures incomplete')
             return [(None,[self.symbol('DANGER01') if geom == 'Point' else self.line('CHBLK',2,'DOTT')])]
-        if command.startswith('QUAPOS') or command.startswith('QUALIN') or command.startswith('SLCONS'):
-            self.issues.add(command + ': default coastline/construction; spatial quality qualifiers incomplete')
-            return [(None,[self.line('CSTLN',2)] if geom != 'Point' else [])]
+        if command.startswith(('QUAPOS','QUAPNT','QUALIN','SLCONS')):
+            construction=command.startswith('SLCONS')
+            if geom=='Point':
+                if quality_field not in fields:return [(None,[])]
+                low=both(cmp('GreaterThanOrEqualTo',prop(quality_field),lit(2)),cmp('LessThan',prop(quality_field),lit(10)))
+                if construction:return [(low,[self.symbol('LOWACC01')]),(negate(low),[])]
+                specials=[(eq(quality_field,4),'QUAPOS01'),(eq(quality_field,5),'QUAPOS02'),(either(eq(quality_field,7),eq(quality_field,8)),'QUAPOS03')]
+                # LOWACC03 referenced by legacy OpenCPN code is absent from this
+                # library; use its defined point low-accuracy symbol LOWACC01.
+                return [(f,[self.symbol(name)]) for f,name in specials]+[(both(low,negate(either(*(f for f,_ in specials)))),[self.symbol('LOWACC01')]),(negate(low),[])]
+            if construction:
+                condition=lambda field,values: either(*(eq(field,v) for v in values)) if field in fields else cmp('EqualTo',lit(1),lit(0))
+                choices=[(condition('CONDTN',[1,2]),1,'DASH'),(condition('CATSLC',[6,15,16]),4,'SOLD'),(condition('WATLEV',[3,4]),2,'DASH')]
+                previous=[];result=[]
+                for f,width,dash in choices+[(cmp('EqualTo',lit(1),lit(1)),2,'SOLD')]:
+                    filt=both(f,negate(either(*previous)) if previous else None);previous.append(f)
+                    symbols=quality_lines([self.line('CSTLN',width,dash)],self.complex_line('LOWACC21'))
+                    if geom=='Area':symbols.insert(0,self.pattern('CROSSX01'))
+                    result.append((filt,symbols))
+                return result
+            conspicuous=eq('CONRAD',1) if cls=='COALNE' and 'CONRAD' in fields else cmp('EqualTo',lit(1),lit(0))
+            return [(conspicuous,quality_lines([self.line('CHMGF',3),self.line('CSTLN',1)],self.complex_line('LOWACC21'))),
+                    (negate(conspicuous),quality_lines([self.line('CSTLN',1)],self.complex_line('LOWACC21')))]
         if command.startswith('RESARE') or command.startswith('RESTRN'):
             area=command.startswith('RESARE')
             symbols=[self.line('CHMGD',2,'DASH')] if area else []
@@ -236,6 +265,9 @@ class Compiler:
         return [(None,[self.symbol('QUESMRK1')] if geom == 'Point' else [self.line('CHMGD',1,'DASH')])]
 
     def instructions(self, text, cls, geom, fields):
+        # The pinned LNDARE point lookup has one missing CS closing parenthesis.
+        # Repair that known record without modifying the licensed source asset.
+        if cls=='LNDARE': text=text.replace('CS(QUAPOS01;','CS(QUAPOS01);')
         variants = [(None,[])]
         for op, raw in re.findall(r"([A-Z]{2})\(((?:'[^']*'|[^()])*)\)",text):
             args = next(csv.reader([raw],quotechar="'",skipinitialspace=True))
@@ -296,15 +328,24 @@ class Compiler:
                     negate(either(*previous)) if previous else None)
                 previous.append(condition)
                 if 'SCAMIN' in fields and l.findtext('display-cat')!='Displaybase':
-                    base=both(base,either(null('SCAMIN'),cmp('EqualTo',prop('SCAMIN'),lit(0)),cmp('LessThanOrEqualTo',fun('env',lit('enc_scale_denominator'),fun('env',lit('wms_scale_denominator'),lit(1))),prop('SCAMIN'))))
+                    visible=either(null('SCAMIN'),cmp('EqualTo',prop('SCAMIN'),lit(0)),cmp('LessThanOrEqualTo',fun('env',lit('enc_scale_denominator'),fun('env',lit('wms_scale_denominator'),lit(1))),prop('SCAMIN')))
+                    if '_enc_safety' in fields:visible=either(cmp('EqualTo',prop('_enc_safety'),lit(1)),visible)
+                    base=both(base,visible)
                 prio=PRIORITIES.get(l.findtext('disp-prio'),5)
-                for extra,symbols in self.instructions(l.findtext('instruction') or '',cls,geom,fields):
+                priorities={prio}
+                instruction=l.findtext('instruction') or ''
+                if '_enc_priority' in fields:
+                    if 'CS(RESARE02)' in instruction:priorities.add(6)
+                    if 'CS(DEPCNT02)' in instruction:priorities.add(8)
+                for extra,symbols in self.instructions(instruction,cls,geom,fields):
                     if not symbols: continue
                     if '_enc_line' in fields:
                         for symbol in symbols:
-                            if symbol.tag==f'{{{SLD}}}LineSymbolizer': symbol.insert(0,node('Geometry',None,prop('_enc_line')))
-                    rule=node('Rule',None,node('Name',f'{cls}-{l.get("RCID")}'),node('Filter',None,both(base,extra),ns=OGC),*symbols)
-                    groups[prio].append(rule)
+                            if symbol.tag==f'{{{SLD}}}LineSymbolizer' and symbol.find(f'{{{SLD}}}Geometry') is None: symbol.insert(0,node('Geometry',None,prop('_enc_line')))
+                    for priority in sorted(priorities):
+                        priority_filter=cmp('EqualTo',prop('_enc_priority'),lit(priority)) if '_enc_priority' in fields else None
+                        rule=node('Rule',None,node('Name',f'{cls}-{l.get("RCID")}'),node('Filter',None,both(base,extra,priority_filter),ns=OGC),*symbols)
+                        groups[priority].append(rule)
         if not groups and not cls.startswith('M_'):
             self.issues.add('No supported lookup for class: '+cls)
         return groups
@@ -339,7 +380,7 @@ def generate(gpkg, out, palette='day', shallow=2, safety=5, deep=10):
         schema=layer.GetLayerDefn()
         fields={schema.GetFieldDefn(i).GetName():schema.GetFieldDefn(i).GetTypeName() for i in range(schema.GetFieldCount())}
         if cls=='TOPMAR': fields['_enc_floating']='Integer'
-        fields.update({'_enc_line':'Geometry','_enc_lookup':'Integer'})
+        fields.update(PORTRAYAL_FIELDS)
         groups=compiler.compile(cls,fields)
         if not groups: continue
         merged=[]
@@ -374,7 +415,7 @@ def generate_catalogue(index, out, palette='day', shallow=2, safety=5, deep=10):
         if cls.startswith('M_') or classes.get(cls,0)==0: continue
         fields={**fields,'_enc_cell':'String','_enc_cscl':'Integer','_enc_safety_contour':'Real'}
         if cls=='TOPMAR': fields['_enc_floating']='Integer'
-        fields.update({'_enc_line':'Geometry','_enc_lookup':'Integer'})
+        fields.update(PORTRAYAL_FIELDS)
         groups=compiler.compile(cls,fields)
         if not groups: continue
         merged=[]

@@ -40,9 +40,10 @@ public final class S57DataStoreFactory implements DataStoreFactorySpi {
         boolean single = file != null && !file.isBlank();
         boolean national = catalogue != null && !catalogue.isBlank();
         if (single == national) throw new IOException("Specify exactly one of file or catalogue");
+        Double safety=(Double)SAFETY.lookUp(params);if(safety==null)safety=5.0;
+        if(!Double.isFinite(safety)||safety<0)throw new IOException("Invalid safety depth");
         if (national) {
             Integer size = (Integer) POOL.lookUp(params);
-            Double safety = (Double) SAFETY.lookUp(params);
             if (size == null) size = 16;
             if (safety == null) safety = 5.0;
             if (size < 1 || size > 256 || !Double.isFinite(safety) || safety < 0) throw new IOException("Invalid catalogue pool size or safety depth");
@@ -54,7 +55,7 @@ public final class S57DataStoreFactory implements DataStoreFactorySpi {
         if (namespace != null) gpkg.put("namespace", namespace);
         Path metadata=EdgeCache.materialize(Path.of(file),snapshot,executable,timeout);
         DataStore delegate = new GeoPkgDataStoreFactory().createDataStore(gpkg);
-        S57DataStore store = new S57DataStore(delegate,metadata);
+        S57DataStore store = new S57DataStore(delegate,metadata,safety);
         if (namespace != null) store.setNamespaceURI(namespace);
         return store;
     }

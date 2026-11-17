@@ -12,7 +12,8 @@ The aim is an S-52-like ENC visualization from S-57 data. The source is a pinned
 - SCAMIN filtering through the normalized ENC scale environment (with the standard WMS scale as fallback). Display-base features remain visible. This is a full-content preset, including soundings; separate standard/base/user-category controls are not yet exposed.
 - Fixed shallow/safety/deep metre bands; unknown depth is no-data colour, with the dredged-area fallback/pattern. Select the first available contour at or deeper than the safety setting. Soundings use native S-52 digit pivots, lowered fractional digits, drying marks and swept/unreliable-depth decorations.
 - Native coloured flares, sector arcs and legs, directional bearings, obscured sectors, and light-characteristic labels. Raster flares already encode a 135-degree bearing; rotation applies only the difference.
-- Ranked RESTRN/RESARE symbols; absent RESTRN creates no restriction graphic. Selected area boundaries yield to coincident COALNE/SLCONS lines. Floating/fixed topmarks use a lazy per-cell co-location index. Point wrecks use depth, category and water level, sounding glyphs and Wk labels.
+- Ranked RESTRN/RESARE symbols; absent RESTRN creates no restriction graphic. Restriction-driven RESARE priorities and safety-contour priority 8 control both shared-edge ownership and global drawing order. Safety contours bypass SCAMIN. Floating/fixed topmarks use a lazy per-cell co-location index. Point wrecks use depth, category and water level, sounding glyphs and Wk labels.
+- Spatial QUAPOS follows native edge/node references: normal and low-accuracy geometries remain separate. Lookups invoking QUAPOS/QUALIN and SLCONS render LOWACC21; contours use dashed low-accuracy strokes. Point quality drives PA/PD/REP/LOWACC01 symbols and sounding qualifiers. SLCONS condition/category/water-level branches and conspicuous COALNE under-strokes are implemented.
 - Separate palette layer groups for WMTS caching, 4×4 metatiles and a 64-pixel gutter. Requested arbitrary `ENV` settings are not a supported WMTS personalization mechanism.
 - Full-catalogue schemas and global style passes, actual `M_COVR` coverage clipping, scale-based cell selection and overlap suppression before class filtering. Each cell supplies its own available safety contour. A GeoServer WMS callback provides rendering scale to the catalogue store, including GWC renders.
 
@@ -22,20 +23,20 @@ Each generated `manifest.json` lists the styles, assets, thresholds, chosen safe
 
 | Area | Current limit | Fidelity work |
 | --- | --- | --- |
-| Depth areas | Fixed four-colour metre preset; unknown depth differs from OpenCPN's intertidal default | Two-shade control and full contour-promotion semantics |
+| Depth areas | Fixed four-colour metre preset; unknown depth differs from OpenCPN's intertidal default | Two-shade control and modern conditional-procedure coverage |
 | Soundings | Native glyphs rendered as points; overlapping soundings may collide | Density/thinning policy, non-metre presets and further quality cases |
 | Wrecks/obstructions | Point wreck attributes supported; generic obstruction/area treatment remains | Contextual surrounding-depth and isolated-danger promotion |
 | Lights | Sector graphics and characteristics supported | Co-located sector radii/flare separation, compound-group formatting, height/range rounding and extended-sector mode |
 | Topmarks | Co-location rounded to 1e-7 degree; missing buoy parent defaults fixed | Explicit feature relationship/primitive association for unusual ENC encodings |
-| Position quality | Default coastline/construction | Preserve spatial primitives/edge quality and port QUAPOS/QUALIN/SLCONS |
-| Patterns and lines | Staggered tiles; precomputed native shared edges, orientation, MASK and visible lookup-priority ownership | Conditional priority promotions, complete spatial-quality styles, pattern phase, complex-line corners and device calibration |
+| Position quality | Native per-edge QUAPOS partitions, QUAPOS point symbols, SLCONS attributes and sounding quality | Quality viewing-group controls, complete obstruction/wreck area procedures and modern QUAPNT02 coverage |
+| Patterns and lines | Staggered tiles; precomputed native shared edges, orientation, MASK and visible lookup-priority ownership | Contextual isolated-danger priorities, pattern phase, complex-line corners and device calibration |
 | Labels | Formatted text, 96-dpi OpenCPN default size; different collision and area-anchor algorithms | Text groups, national names, abbreviation, exact text placement and high-DPI corpus |
 | Coverage | Catalogue quilting uses a 4× compilation-scale heuristic, deterministic overlap ownership and M_COVR clipping; overview gaps remain where no eligible chart exists | Reference ECDIS chart selection, scale-boundary behavior, dateline and tile-boundary regression corpus |
 | Chart metadata | Preserved in cache, not all displayed | Quality overlays, compilation-scale warnings, temporal/seasonal feature controls |
 
-Three symbols referenced by the pinned lookup catalogue are absent from its symbol definitions (`ESSARE01`, `PSSARE01`, `FLTHAZ02`); those rules use the catalogue's question-mark fallback and report it. They are not silently replaced with an unrelated navigation symbol.
+Some names referenced by the full pinned lookup catalogue are absent from its symbol definitions (`ESSARE01`, `PSSARE01`, `FLTHAZ02`, `NEWOBJ01`, `NEWOBJ 01`, and the concatenated `DGPS01DRFSTA01`); those rules use the catalogue's question-mark fallback and report it. They are not silently replaced with an unrelated navigation symbol.
 
-The implementation was compared with actual OpenCPN 5.12.4 renders of three identical NOAA cells, across six scenes, and repeated after the November 16 optimizations. See the [latest comparison and resource measurements](optimization-2026-11-16.md), [native metadata contract](edge-metadata.md), and the [historical November 15 comparison](portrayal-comparison.md). Label placement and other contextual portrayal differences remain; pixel agreement is not a conformance score.
+The implementation was compared with actual OpenCPN 5.12.4 renders of three identical NOAA cells, across seven scenes, including an overscaled spatial-quality diagnostic, and repeated after the November 16 optimizations and November 17 conditional/quality changes. See the [latest comparison and resource measurements](portrayal-2026-11-17.md), [native metadata contract](edge-metadata.md), and the [historical November 15 comparison](portrayal-comparison.md). Label placement and other contextual portrayal differences remain; pixel agreement is not a conformance score.
 
 ## Validation route toward higher fidelity
 

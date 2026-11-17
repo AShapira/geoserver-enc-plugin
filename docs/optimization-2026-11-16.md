@@ -1,5 +1,7 @@
 # Implemented optimizations and repeated validation — 2026-11-16
 
+Historical measurements. See the [November 17 conditional-priority and spatial-quality update](portrayal-2026-11-17.md) for current portrayal and repeated performance results.
+
 The full NOAA catalogue remains available in the [local container demo](http://127.0.0.1:18080/enc.html). Native shared-edge metadata, precomputed portrayal lookups, bounded edge-geometry caching, spatial-filter pushdown, selective WMTS preseed, disk quotas and render/memory controls are implemented. Warm WMS latency is broadly unchanged in this workload. The principal operational gain is predictable cached WMTS access; native metadata removes the old approximate coastline overlay path and preserves topology needed for further portrayal work.
 
 See the interactive OpenCPN comparison (`../evidence/optimization-2026-11-16/comparison.html`; local generated evidence), [metadata contract](edge-metadata.md), and [decision log, entries 46 onward](decisions.md). The November 15 reports remain historical records.

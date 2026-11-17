@@ -18,8 +18,9 @@ import urllib.request
 import uuid
 
 SAMPLER = r'''
-import json,time,os,sys
+import json,time,os,sys,signal
 from pathlib import Path
+signal.signal(signal.SIGTERM,lambda *_:sys.exit(0))
 Path(sys.argv[1]).write_text(str(os.getpid()))
 def pairs(path):
     return {a:int(b) for a,b,*_ in (x.replace(':','').split() for x in Path(path).read_text().splitlines()) if b.isdigit()}
@@ -35,7 +36,7 @@ def run(a):
     a.out.mkdir(parents=True,exist_ok=True)
     samples=[]
     pidfile='/tmp/enc-benchmark-'+uuid.uuid4().hex+'.pid'
-    process=subprocess.Popen([a.engine,'exec',a.container,'python3','-u','-c',SAMPLER,pidfile],stdout=subprocess.PIPE,text=True)
+    process=subprocess.Popen([a.engine,'exec',a.container,'python3','-u','-c',SAMPLER,pidfile],stdout=subprocess.PIPE,text=True,start_new_session=True)
     def read():
         for line in process.stdout: samples.append(json.loads(line))
     thread=threading.Thread(target=read,daemon=True);thread.start()

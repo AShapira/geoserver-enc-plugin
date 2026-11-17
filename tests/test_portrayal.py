@@ -6,7 +6,7 @@ import tempfile
 import unittest
 import xml.etree.ElementTree as ET
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from portrayal import Compiler, ROOT, attribute_filter, generate
+from portrayal import Compiler, ROOT, PORTRAYAL_FIELDS, attribute_filter, generate
 from hpgl import render
 
 
@@ -122,6 +122,40 @@ class PortrayalTests(unittest.TestCase):
         xml=''.join(ET.tostring(s,encoding='unicode') for s in symbols)
         self.assertIn('${COLOUR}',xml);self.assertNotIn('${SECTR1}',xml)
         self.assertIn('encLightDescription',xml)
+
+    def test_conditional_priority_and_safety_scamin_use_metadata(self):
+        fields={**PORTRAYAL_FIELDS,'PRIM':'Integer','SCAMIN':'Integer','VALDCO':'Real','RESTRN':'String'}
+        for cls,lookup,priority,safe in [('DEPCNT',31805,8,1),('RESARE',32202,6,0)]:
+            groups=self.compiler.compile(cls,fields)
+            attrs={'_enc_lookup':lookup,'_enc_priority':priority,'_enc_safety':safe,'VALDCO':10,'SCAMIN':10000,'_scale':50000 if safe else 5000}
+            matches=[p for p,rules in groups.items() for r in rules if evaluate(r.find('{http://www.opengis.net/ogc}Filter')[0],attrs)]
+            self.assertEqual([priority],matches)
+        attrs['_scale']=50000
+        self.assertFalse(any(evaluate(r.find('{http://www.opengis.net/ogc}Filter')[0],attrs) for rules in groups.values() for r in rules))
+
+    def test_spatial_quality_lines_keep_disjoint_geometries(self):
+        fields={**PORTRAYAL_FIELDS,'CONRAD':'Integer','VALDCO':'Real','CONDTN':'Integer','CATSLC':'Integer','WATLEV':'Integer'}
+        for command,cls in [('QUAPOS01','COALNE'),('SLCONS03','SLCONS'),('DEPCNT02','DEPCNT')]:
+            for condition,symbols in self.compiler.conditional(command,cls,'Line',fields):
+                geometries=[s.find('{http://www.opengis.net/sld}Geometry')[0].text for s in symbols]
+                self.assertIn('_enc_line_normal',geometries);self.assertIn('_enc_line_quality',geometries)
+        variants=self.compiler.conditional('SLCONS03','SLCONS','Line',fields)
+        for attrs,width,dash in [({'CONDTN':1,'CATSLC':6},.6,True),({'CATSLC':6},2.4,False),({'WATLEV':3},1.2,True),({},1.2,False)]:
+            symbols=[s for f,s in variants if evaluate(f,attrs)]
+            self.assertEqual(1,len(symbols));xml=ET.tostring(symbols[0][0],encoding='unicode')
+            self.assertIn(f'stroke-width">{width}<',xml);self.assertEqual(dash,'stroke-dasharray' in xml)
+
+    def test_point_quality_symbols_and_malformed_pinned_land_lookup(self):
+        variants=self.compiler.conditional('QUAPOS01','LNDARE','Point',PORTRAYAL_FIELDS)
+        for q,name in [(None,None),(1,None),(2,'LOWACC01'),(4,'QUAPOS01'),(5,'QUAPOS02'),(7,'QUAPOS03'),(8,'QUAPOS03'),(9,'LOWACC01'),(10,None),(11,None)]:
+            selected=[s for f,s in variants if evaluate(f,{'_enc_quapos':q})]
+            self.assertEqual(1,len(selected))
+            xml=''.join(ET.tostring(s,encoding='unicode') for s in selected[0])
+            if name:self.assertIn(name,xml)
+            else:self.assertEqual('',xml)
+        groups=self.compiler.compile('LNDARE',{**PORTRAYAL_FIELDS,'PRIM':'Integer','OBJNAM':'String'})
+        xml=''.join(ET.tostring(r,encoding='unicode') for rules in groups.values() for r in rules)
+        self.assertIn('QUAPOS01.png',xml)
 
 
 if __name__=='__main__': unittest.main()

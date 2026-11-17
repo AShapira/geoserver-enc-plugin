@@ -13,10 +13,10 @@ import org.locationtech.jts.io.*;
 
 /** Atomic, immutable native topology/lookup sidecars; GDAL stays outside the JVM. */
 public final class EdgeCache {
-    static final String FORMAT="enc-edges-1";
+    static final String FORMAT="enc-edges-2";
     static final String REVISION=revision();
     private static String revision(){try {
-        var digest=MessageDigest.getInstance("SHA-256");digest.update((FORMAT+":lookup-2:conditional-lines-endpoints-mask-orientation").getBytes(StandardCharsets.UTF_8));
+        var digest=MessageDigest.getInstance("SHA-256");digest.update((FORMAT+":lookup-3:conditional-priority-spatial-quality").getBytes(StandardCharsets.UTF_8));
         try(var in=EdgeCache.class.getResourceAsStream("s52/chartsymbols.xml")){digest.update(in.readAllBytes());}
         return HexFormat.of().formatHex(digest.digest()).substring(0,16);
     }catch(Exception e){throw new ExceptionInInitializerError(e);}}
@@ -64,12 +64,25 @@ public final class EdgeCache {
             statement.execute("PRAGMA journal_mode=OFF");statement.execute("PRAGMA synchronous=OFF");db.setAutoCommit(false);
             statement.execute("CREATE TABLE metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL)");
             statement.execute("CREATE TABLE edges(id INTEGER PRIMARY KEY,geom BLOB NOT NULL,start_node INTEGER,end_node INTEGER,quapos INTEGER,posacc REAL)");
-            statement.execute("CREATE TABLE features(class TEXT,rcid INTEGER,lookup_id INTEGER,priority INTEGER,line INTEGER,scamin REAL,prim INTEGER,PRIMARY KEY(class,rcid)) WITHOUT ROWID");
+            statement.execute("CREATE TABLE features(class TEXT,rcid INTEGER,lookup_id INTEGER,priority INTEGER,line INTEGER,scamin REAL,prim INTEGER,contour INTEGER,depth1 REAL,depth2 REAL,PRIMARY KEY(class,rcid)) WITHOUT ROWID");
             statement.execute("CREATE TABLE links(class TEXT,rcid INTEGER,seq INTEGER,edge INTEGER,orientation INTEGER,usage INTEGER,mask INTEGER,PRIMARY KEY(class,rcid,seq)) WITHOUT ROWID");
+            statement.execute("CREATE TABLE point_quality(class TEXT,rcid INTEGER,seq INTEGER,geom BLOB NOT NULL,quapos INTEGER,posacc REAL,PRIMARY KEY(class,rcid,seq)) WITHOUT ROWID");
             Set<String> tables=new TreeSet<>();try(var s=in.createStatement();var rs=s.executeQuery("SELECT name FROM sqlite_master WHERE type='table'")){while(rs.next())tables.add(rs.getString(1));}
             Map<Integer,Coordinate> nodes=new HashMap<>();Set<Integer> edgeIds=new HashSet<>();
             if(tables.contains("ConnectedNode"))try(var s=in.createStatement();var rs=s.executeQuery("SELECT RCID,GEOMETRY FROM ConnectedNode")) {
                 while(rs.next()){byte[] b=rs.getBytes(2);if(b!=null){Geometry g=reader.read(b);if(!g.isEmpty())nodes.put(rs.getInt(1),g.getCoordinate());}}
+            }
+            // Only qualified point primitives need a second geometry copy. Keep each
+            // node separately: assigning the worst value to a whole multipoint is wrong.
+            record PointQuality(byte[] geometry,Object quapos,Object posacc) {}
+            Map<String,PointQuality> points=new HashMap<>();
+            for(String table:List.of("IsolatedNode","ConnectedNode"))if(tables.contains(table)){
+                Set<String> columns=new HashSet<>();try(var s=in.createStatement();var rs=s.executeQuery("PRAGMA table_info("+quote(table)+")")){while(rs.next())columns.add(rs.getString("name"));}
+                if(!columns.contains("QUAPOS"))continue;
+                try(var s=in.createStatement();var rs=s.executeQuery("SELECT RCID,GEOMETRY,QUAPOS,"+(columns.contains("POSACC")?"POSACC":"NULL")+" FROM "+quote(table))){
+                    while(rs.next())if(rs.getBytes(2)!=null&&(rs.getObject(3)!=null||rs.getObject(4)!=null))
+                        points.put((table.equals("IsolatedNode")?110:120)+":"+rs.getInt(1),new PointQuality(rs.getBytes(2),rs.getObject(3),rs.getObject(4)));
+                }
             }
             if(tables.contains("Edge"))try(var s=in.createStatement();var rs=s.executeQuery("SELECT RCID,GEOMETRY,NAME_RCID_0,NAME_RCID_1,QUAPOS,POSACC FROM Edge");var put=db.prepareStatement("INSERT INTO edges VALUES(?,?,?,?,?,?)")) {
                 while(rs.next()) {
@@ -81,7 +94,7 @@ public final class EdgeCache {
                     put.setInt(3,start);put.setInt(4,end);put.setObject(5,rs.getObject(5));put.setObject(6,rs.getObject(6));put.addBatch();edgeIds.add(id);
                 }put.executeBatch();
             }
-            try(var feature=db.prepareStatement("INSERT INTO features VALUES(?,?,?,?,?,?,?)");var link=db.prepareStatement("INSERT INTO links VALUES(?,?,?,?,?,?,?)")) {
+            try(var feature=db.prepareStatement("INSERT INTO features VALUES(?,?,?,?,?,?,?,?,?,?)");var link=db.prepareStatement("INSERT INTO links VALUES(?,?,?,?,?,?,?)");var point=db.prepareStatement("INSERT INTO point_quality VALUES(?,?,?,?,?,?)")) {
                 for(String type:tables) {
                     if(!type.matches("[A-Z][A-Z0-9_]{4,7}") || type.startsWith("M_") || type.startsWith("C_"))continue;
                     try(var s=in.createStatement();var rs=s.executeQuery("SELECT * FROM "+quote(type))) {
@@ -92,16 +105,21 @@ public final class EdgeCache {
                             int rcid=rs.getInt("RCID"),prim=rs.getInt("PRIM");var rule=S52Lookup.INSTANCE.select(type,prim,attrs);
                             double scamin=attrs.get("SCAMIN") instanceof Number n?n.doubleValue():0;
                             if(rule!=null&&rule.base())scamin=0;
-                            feature.setString(1,type);feature.setInt(2,rcid);feature.setInt(3,rule==null?-1:rule.id());feature.setInt(4,rule==null?-1:rule.priority());
-                            feature.setInt(5,rule!=null&&rule.line()?1:0);feature.setDouble(6,scamin);feature.setInt(7,prim);feature.addBatch();
+                            feature.setString(1,type);feature.setInt(2,rcid);feature.setInt(3,rule==null?-1:rule.id());feature.setInt(4,rule==null?-1:rule.priority(attrs));
+                            feature.setInt(5,rule!=null&&rule.line()?1:0);feature.setDouble(6,scamin);feature.setInt(7,prim);
+                            feature.setInt(8,rule!=null&&rule.contour()?1:0);
+                            feature.setObject(9,attrs.get(type.equals("DEPCNT")?"VALDCO":"DRVAL1"));feature.setObject(10,attrs.get("DRVAL2"));feature.addBatch();
                             int[] ids=integers(attrs.get("NAME_RCID")),kinds=integers(attrs.get("NAME_RCNM")),orient=integers(attrs.get("ORNT")),usage=integers(attrs.get("USAG")),mask=integers(attrs.get("MASK"));
                             if(ids.length!=kinds.length||ids.length!=orient.length||ids.length!=usage.length||ids.length!=mask.length)throw new IOException("Inconsistent FSPT arrays: "+type+"/"+rcid);
                             for(int i=0;i<ids.length;i++)if(kinds[i]==130) {
                                 if(!edgeIds.contains(ids[i]))throw new IOException("Missing edge "+ids[i]+" for "+type+"/"+rcid);
                                 link.setString(1,type);link.setInt(2,rcid);link.setInt(3,i);link.setInt(4,ids[i]);link.setInt(5,orient[i]);link.setInt(6,usage[i]);link.setInt(7,mask[i]);link.addBatch();
+                            }else if(prim==1){
+                                var p=points.get(kinds[i]+":"+ids[i]);if(p==null)continue;
+                                point.setString(1,type);point.setInt(2,rcid);point.setInt(3,i);point.setBytes(4,p.geometry());point.setObject(5,p.quapos());point.setObject(6,p.posacc());point.addBatch();
                             }
                         }
-                    }feature.executeBatch();link.executeBatch();
+                    }feature.executeBatch();link.executeBatch();point.executeBatch();
                 }
             }
             statement.execute("CREATE INDEX edge_owners ON links(edge)");

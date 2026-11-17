@@ -7,7 +7,15 @@ import org.w3c.dom.Element;
 
 /** The same ordered Plain/Lines/Simplified lookup selection as the SLD compiler. */
 final class S52Lookup {
-    record Rule(int id,int priority,boolean base,boolean line,List<String> attributes) {}
+    record Rule(int id,int priority,boolean base,boolean line,List<String> attributes,String instruction) {
+        int priority(Map<String,Object> attributes) {
+            if(instruction.contains("CS(RESARE02)"))
+                for(int restriction:EdgeCache.integers(attributes.get("RESTRN")))
+                    if(restriction>=1&&restriction<=8||restriction==14)return 6;
+            return priority;
+        }
+        boolean contour(){return instruction.contains("CS(DEPCNT02)");}
+    }
     final Map<String,List<Rule>> rules=new HashMap<>();
     static final S52Lookup INSTANCE=new S52Lookup();
     private S52Lookup() {
@@ -25,7 +33,7 @@ final class S52Lookup {
                 List<String> attributes=new ArrayList<>();var a=e.getElementsByTagName("attrib-code");
                 for(int j=0;j<a.getLength();j++)attributes.add(a.item(j).getTextContent());
                 int priority=priorities.indexOf(text(e,"disp-prio"));
-                rules.computeIfAbsent(e.getAttribute("name")+":"+prim,k->new ArrayList<>()).add(new Rule(Integer.parseInt(e.getAttribute("RCID")),priority<0?5:priority,text(e,"display-cat").equals("Displaybase"),line,List.copyOf(attributes)));
+                rules.computeIfAbsent(e.getAttribute("name")+":"+prim,k->new ArrayList<>()).add(new Rule(Integer.parseInt(e.getAttribute("RCID")),priority<0?5:priority,text(e,"display-cat").equals("Displaybase"),line,List.copyOf(attributes),instruction));
             }
             for(var value:rules.values())value.sort(Comparator.comparingInt((Rule r)->r.attributes().size()).reversed());
         } catch(Exception error){throw new ExceptionInInitializerError(error);}

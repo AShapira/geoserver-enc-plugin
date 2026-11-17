@@ -12,9 +12,11 @@ with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:
     z.write(jar,'lib/'+jar.name)
     for name in ['README.md','LICENSE','NOTICE.md','pom.xml','environment-linux-64.lock','.containerignore','.dockerignore']:
         z.write(ROOT/name,name)
-    for directory in ['src','scripts','tests','docs','portrayal/upstream','container','viewer','evidence/portrayal','evidence/performance','evidence/optimization-2026-11-16']:
+    for directory in ['src','scripts','tests','docs','portrayal/upstream','container','viewer','evidence/portrayal','evidence/performance','evidence/optimization-2026-11-16','evidence/portrayal-2026-11-17']:
         for p in sorted((ROOT/directory).rglob('*')):
-            if p.is_file() and '__pycache__' not in p.parts: z.write(p,str(p.relative_to(ROOT)))
+            # Packaging receipts contain this archive's hash and must stay external.
+            if p.is_file() and '__pycache__' not in p.parts and p.name not in {'package.log','package-verification.json'}:
+                z.write(p,str(p.relative_to(ROOT)))
 checksum=hashlib.sha256(archive.read_bytes()).hexdigest()
 archive.with_suffix('.zip.sha256').write_text(checksum+'  '+archive.name+'\n')
 print(archive);print(checksum)
