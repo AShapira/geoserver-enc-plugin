@@ -2,14 +2,24 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.enc</groupId><artifactId>gs-s57</artifactId><version>0.1.0</version>
   <name>GDAL S-57 GeoServer store</name>
-  <properties><maven.compiler.release>17</maven.compiler.release><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding><geotools.version>35.2</geotools.version></properties>
+  <properties><maven.compiler.release>17</maven.compiler.release><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding><geoserver.version>3.0.2</geoserver.version><geoserver.wms.artifact>gs-wms-core</geoserver.wms.artifact><geotools.version>35.2</geotools.version></properties>
   <repositories><repository><id>osgeo</id><url>https://repo.osgeo.org/repository/release/</url></repository></repositories>
   <dependencies>
-    <dependency><groupId>org.geoserver</groupId><artifactId>gs-wms-core</artifactId><version>3.0.2</version><scope>provided</scope></dependency>
+    <dependency><groupId>org.geoserver</groupId><artifactId>${geoserver.wms.artifact}</artifactId><version>${geoserver.version}</version><scope>provided</scope></dependency>
     <dependency><groupId>org.geotools</groupId><artifactId>gt-geopkg</artifactId><version>${geotools.version}</version><scope>provided</scope></dependency>
     <dependency><groupId>org.geotools</groupId><artifactId>gt-epsg-hsql</artifactId><version>${geotools.version}</version><scope>test</scope></dependency>
     <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>5.11.4</version><scope>test</scope></dependency>
   </dependencies>
+  <profiles>
+    <profile>
+      <id>geoserver-2.28</id>
+      <properties>
+        <geoserver.version>2.28.0</geoserver.version>
+        <geoserver.wms.artifact>gs-wms</geoserver.wms.artifact>
+        <geotools.version>34.0</geotools.version>
+      </properties>
+    </profile>
+  </profiles>
   <build>
     <resources>
       <resource><directory>src/main/resources</directory></resource>

@@ -28,16 +28,18 @@ def png(url,size):
     return data,headers
 
 
-def run(publication,out):
+def run(publication,out,bbox=None):
     m=json.loads(publication.read_text());out.mkdir(parents=True,exist_ok=True)
     root=m['wms_url'].split('/wms?')[0]
     layer=m['workspace']+':'+m['group']
     base=dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(m['wms_url']).query,keep_blank_values=True))
     base.update(width='1000',height='1000')
+    if bbox is not None: base['bbox']=','.join(map(str,bbox))
     url=lambda params: root+'/wms?'+urllib.parse.urlencode(params)
     start=time.monotonic();image,_=png(url(base),(1000,1000)); wms_seconds=time.monotonic()-start
     (out/'wms-overview.png').write_bytes(image)
-    x1,y1,x2,y2=m['bbox']
+    # Catalogue manifests describe worldwide bounds but publish a regional preview.
+    x1,y1,x2,y2=map(float,base['bbox'].split(','))
     axis={**base,'version':'1.3.0','crs':'EPSG:4326','bbox':f'{y1},{x1},{y2},{x2}'};axis.pop('srs')
     image13,_=png(url(axis),(1000,1000))
     assert Image.open(BytesIO(image)).tobytes()==Image.open(BytesIO(image13)).tobytes(),'WMS axis order mismatch'
@@ -70,7 +72,7 @@ def run(publication,out):
     wfs=root+'/ows?'+urllib.parse.urlencode({'service':'WFS','version':'2.0.0','request':'GetFeature','typeNames':m['workspace']+':SOUNDG','count':5,'outputFormat':'application/json'})
     features=json.loads(get(wfs)[0]);assert len(features['features'])==5
     assert all('DEPTH' in f['properties'] and f['geometry']['type']=='Point' for f in features['features'])
-    report={'layer':layer,'bbox':m['bbox'],'wms_overview_seconds':round(wms_seconds,3),'wms_1_1_1_vs_1_3_0_pixels_equal':True,
+    report={'layer':layer,'bbox':[x1,y1,x2,y2],'wms_overview_seconds':round(wms_seconds,3),'wms_1_1_1_vs_1_3_0_pixels_equal':True,
         'wms_3857':True,'concurrent_wms_requests':4,'wmts_tile_url':tileurl,'wmts_first_headers':first,'wmts_second_headers':second,
         'wfs_split_soundings':5,'wms_sha256':hashlib.sha256(image).hexdigest(),'wmts_sha256':hashlib.sha256(tile).hexdigest()}
     (out/'smoke.json').write_text(json.dumps(report,indent=2)+'\n')
@@ -79,4 +81,6 @@ def run(publication,out):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--publication',type=Path,default=Path('portrayal/generated/publication.json'))
-    p.add_argument('--out',type=Path,default=Path('evidence'));a=p.parse_args();run(a.publication,a.out)
+    p.add_argument('--out',type=Path,default=Path('evidence'))
+    p.add_argument('--bbox',type=float,nargs=4,metavar=('WEST','SOUTH','EAST','NORTH'),help='Override the WMS preview region (EPSG:4326)')
+    a=p.parse_args();run(a.publication,a.out,a.bbox)
