@@ -1,0 +1,8 @@
+*
+!Dockerfile
+!src/
+!src/main/
+!src/main/**
+!portrayal/
+!portrayal/upstream/
+!portrayal/upstream/**

@@ -76,6 +76,12 @@ The bootstrap preserves an existing demo data directory. Stop the foreground ser
 
 ## Install in an existing GeoServer
 
+For a **lean, source-only offline image build**, use the [air-gap build kit](airgap/README.md).
+It defaults to Kartoza GeoServer **2.28.0**, accepts other prepared base images and library paths,
+and contains only production sources, required resources, build configuration and notices.
+Create the ZIP with `python3 scripts/package_airgap.py`. The [full Kartoza guide](docs/kartoza-2.28.0.md)
+also covers the optional chart publisher and the compatibility validation.
+
 1. Use **GeoServer 3.0.2**, Java 17 or 21, and GDAL 3.2+ with S57 and GPKG drivers (tested with 3.8.4 in the container and 3.11.5 in development). Ensure GDAL's data dictionaries and PROJ data are available to the server process.
 2. Build with `mvn package`. Copy **only** `target/gs-s57-0.1.0.jar` into `WEB-INF/lib`, then restart GeoServer. The tested GeoServer binary already contains `gt-geopkg` and its dependencies; do not replace GeoTools JARs. If your custom distribution omits them, install its matching GeoPackage support first.
 3. Add a store of type **S-57 ENC (GDAL)**, supplying:

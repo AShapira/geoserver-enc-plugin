@@ -2,6 +2,11 @@
 
 Prepared by Codex. Validation date: 2026-11-17.
 
+For a smaller source-only distribution, use the [lean air-gap build kit](../airgap/README.md)
+and `python3 scripts/package_airgap.py`. Its configurable Dockerfile adds only the plugin
+JAR to a prepared base image. The Python helpers described below belong to the full
+distribution and are intentionally absent from that lean kit.
+
 The S-57 plugin builds and runs with `docker.io/kartoza/geoserver:2.28.0`.
 Use `container/kartoza.Dockerfile` for this image. It compiles against the base
 image's actual libraries and does not install packages or download dependencies.

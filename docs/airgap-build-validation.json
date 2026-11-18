@@ -1,0 +1,58 @@
+{
+  "date": "2026-11-18",
+  "prepared_by": "Codex",
+  "archive": "gs-s57-0.1.0-airgap-build-geoserver-2.28.0.zip",
+  "archive_sha256": "723c28c522fd022d610b1d3adcfa1bf24a4f9ecc7c354e50a4ade89c1529148a",
+  "archive_bytes": 745896,
+  "files": 32,
+  "previous_archive_bytes": 1673150,
+  "size_reduction_percent": 55.4,
+  "source_only": true,
+  "deterministic_packaging": true,
+  "final_build_inputs_match_extracted_test_context": true,
+  "build_network": "none",
+  "build_pull": "never",
+  "build_cache": false,
+  "engine": "Podman, Linux x86_64",
+  "images": {
+    "localhost/geoserver-s57:2.28.0-airgap-minimal": {
+      "base": "docker.io/kartoza/geoserver:2.28.0",
+      "base_id": "8285bf9f611cea6c2386070bc33b2ccf6aa2297e151338fd48bcfdc13a68dd8e",
+      "image_id": "e12d58d8784ca410c10a3421d31cca98ad16602bbf3c4790fbdb3d7cbeff0fd1",
+      "runtime_settings_preserved": true
+    },
+    "localhost/geoserver-s57:3.0.2-airgap-minimal": {
+      "base": "localhost/geoserver-enc:s52-quality",
+      "base_id": "8835c9c67eb33ffd63db73350e745b7e2c17ea6fcb95491ecb31bd5fe3338557",
+      "image_id": "83b9667ed860eccce077336392bc8b1c5a84de5b12aca254ddb034bd9704e641",
+      "runtime_settings_preserved": true
+    }
+  },
+  "negative_checks": {
+    "wrong_geoserver_version_rejected": true,
+    "vanilla_official_3_0_2_compiles_but_missing_gdal_rejected": true
+  },
+  "kartoza_jar_payload_matches_previous_validated_jar": true,
+  "runtime_smoke": {
+    "geoserver": "2.28.0",
+    "store_discovered": true,
+    "native_update_applied": 1,
+    "wfs_point_soundings": 5,
+    "wms_nonblank_png": [
+      512,
+      512
+    ],
+    "wms_bbox": [
+      -73.5972,
+      40.5685,
+      -73.5922,
+      40.573499999999996
+    ],
+    "wms_band_stddev": [
+      0.0,
+      6.79722680294256,
+      6.79722680294256
+    ],
+    "python_publisher_required": false
+  }
+}
