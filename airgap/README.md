@@ -1,11 +1,13 @@
 # S-57 extension: lean offline image build
 
-Prepared by Codex. Package revision 1, 2026-11-18.
+Prepared by Codex. Release **0.2.0**, 2026-11-18.
 
 This source-only kit adds the S-57 extension to an existing GeoServer image.
 The default target is **kartoza/geoserver:2.28.0 / GeoTools 34.0**. Its Dockerfile
 compiles against the libraries inside your chosen base image, then adds one JAR.
 The final image inherits the base's user, entrypoint, command and environment.
+This kit is maintained on `main`; no vendor-specific source branch is needed.
+The release archive is `gs-s57-0.2.0-airgap-build.zip`.
 
 ## What to bring into the air gap
 
@@ -21,6 +23,8 @@ The base image must contain:
 - GDAL's **ogr2ogr and ogrinfo**, with **S57, GPKG and SQLite** drivers, GDAL
   dictionaries and PROJ data available to the runtime user.
 - A POSIX shell and the ordinary `chmod` utility used during the build.
+- A clean extension installation: no older `gs-s57*.jar` beside the new plugin.
+  A base already containing `gs-s57-0.2.0.jar` is supported; it is replaced.
 
 Kartoza 2.28.0 already supplies these dependencies. No host Java, Maven, Python,
 Pillow, JUnit, C compiler, package manager or network repository is required.
@@ -30,6 +34,29 @@ If the base lacks a dependency, prepare and transfer a suitable base image
 beforehand. This package neither downloads dependencies nor adds a second toolchain.
 In particular, the inspected vanilla `docker.osgeo.org/geoserver:3.0.2` image
 contains Java and GeoPackage support but **does not contain GDAL**.
+
+For runtime use, the server needs Java 17 or 21, the native shared libraries
+required by its GDAL/PROJ installation, and its matching GeoServer libraries
+(including GeoTools GeoPackage/JDBC, SQLite JDBC and JTS). Keep those supplied
+versions together; do not assemble a mixture of JARs from different releases.
+The service account needs read access to the ENC exchange set and GDAL data,
+and write access to its snapshot cache and GeoServer data directory. Provide
+enough disk space for the charts and generated snapshots. Base `.000` files and
+their numbered updates must be supplied separately. No scheduled download is needed.
+
+Optional tools are separate from the build dependencies:
+
+| Workflow | Additional dependencies |
+| --- | --- |
+| Regenerate this ZIP from the repository | Python 3 standard library; run `python3 scripts/package_airgap.py` |
+| Maven build instead of the Dockerfile | JDK 17/21, Maven, and cached dependency JARs/POMs/build plugins or an internal repository |
+| Prepare a catalogue | Full project's Python scripts, Python 3, GDAL Python bindings and local ENC exchange sets |
+| Generate full nautical chart styles | Full project's publisher, Python 3, GDAL bindings, Pillow, REST credentials and writable style assets |
+| Run the Java tests | Test sources, JUnit Platform Console Standalone 1.11.4 and native ENC fixtures; full-inventory test additionally needs a prepared catalogue |
+| Run Python/image smoke tests | Test scripts and Pillow, with GDAL Python bindings for portrayal generation |
+
+The plugin itself launches `ogr2ogr` as a process. It does not require GeoServer's
+GDAL raster extension or GDAL Java/JNI bindings.
 
 ## Build
 
@@ -144,12 +171,26 @@ complete S-52 conformance is claimed.
 
 ## Checks performed for this kit
 
+| Tested base | GeoServer | GeoTools | Java | GDAL | Scope |
+| --- | --- | --- | --- | --- | --- |
+| `docker.io/kartoza/geoserver:2.28.0` | 2.28.0 | 34.0 | Temurin 17.0.16 | 3.8.4 | Offline image build; native update, store discovery, WFS and WMS |
+| Prepared image derived from official `docker.osgeo.org/geoserver:3.0.2`, with GDAL installed | 3.0.2 | 35.2 | Temurin 21.0.12.1 | 3.8.4 | Offline image build; preserves base settings |
+| Vanilla `docker.osgeo.org/geoserver:3.0.2` | 3.0.2 | 35.2 | Temurin 21.0.12.1 | Absent | Java compilation passed; runtime image correctly rejected for missing GDAL |
+
+Tests used **Podman 5.8.2 on Linux x86_64**. Docker/PowerShell command examples
+are supplied, but native Windows Docker and other CPU architectures have not
+been executed. These specific results are not a guarantee for arbitrary images
+or versions. The complete repository retains machine-readable build evidence.
+
 On 2026-11-18, the extracted kit built with Podman on Linux x86_64, with
 `--pull=never --network=none --no-cache`, against both Kartoza 2.28.0 and the
 project's existing official-GeoServer-3.0.2-based image with GDAL already installed.
 The inspected vanilla official 3.0.2 image compiled the Java sources, then was
 correctly rejected for missing GDAL. An intentionally wrong GeoServer version
-was also rejected. Other architectures and vendor images have not been tested.
+and a base with an older S-57 JAR were also rejected. Other architectures and
+vendor images have not been tested. The 0.2.0 Maven build passed 28 Java tests
+with no skips; all 15 Python tests also passed. These test tools are not included
+in the lean kit and are not needed to build its image.
 
 The Kartoza build's JAR entries exactly match the previously validated plugin's
 classes and resources; ZIP timestamps are irrelevant to that comparison. All

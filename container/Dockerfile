@@ -11,7 +11,7 @@ USER root
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     gdal-bin python3-gdal python3-pil python3-requests ca-certificates curl fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
-COPY --from=plugin-build /tmp/gs-s57.jar /usr/local/tomcat/webapps/geoserver/WEB-INF/lib/gs-s57-0.1.0.jar
+COPY --from=plugin-build /tmp/gs-s57.jar /usr/local/tomcat/webapps/geoserver/WEB-INF/lib/gs-s57-0.2.0.jar
 COPY scripts /opt/enc/scripts
 COPY portrayal/upstream /opt/enc/portrayal/upstream
 COPY src/main/resources/org/enc/geoserver/cache-recipe.txt /opt/enc/src/main/resources/org/enc/geoserver/cache-recipe.txt

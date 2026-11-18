@@ -3,13 +3,21 @@
 import argparse
 import hashlib
 from pathlib import Path
+import re
+import xml.etree.ElementTree as ET
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_NAME = 'gs-s57-0.1.0-airgap-build-geoserver-2.28.0.zip'
+VERSION = ET.parse(ROOT / 'pom.xml').getroot().findtext('{http://maven.apache.org/POM/4.0.0}version')
+if not VERSION or not re.fullmatch(r'\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?', VERSION):
+    raise ValueError('Expected a valid project version in pom.xml')
+DEFAULT_NAME = f'gs-s57-{VERSION}-airgap-build.zip'
 
 
 def package(destination):
+    dockerfile = (ROOT / 'airgap/Dockerfile').read_text()
+    if set(re.findall(r'gs-s57-([0-9A-Za-z.-]+)\.jar', dockerfile)) != {VERSION}:
+        raise ValueError('Air-gap Dockerfile plugin version does not match pom.xml')
     inputs = {
         'Dockerfile': ROOT / 'airgap/Dockerfile',
         '.dockerignore': ROOT / 'airgap/context.dockerignore',

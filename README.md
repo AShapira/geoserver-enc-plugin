@@ -1,6 +1,6 @@
 # GeoServer S-57 ENC plugin
 
-A read-only **GeoServer 3.0.2 / GeoTools 35.2** plugin backed by GDAL's S57 reader. One catalogue store serves the **entire active NOAA ENC catalogue** through WMS and GeoWebCache WMTS. It indexes actual chart coverage, selects cells by scale and clips overlapping coverage. Adjacent updates are applied to immutable, indexed GeoPackage snapshots. Single `.000` stores remain supported.
+A read-only GeoServer S-57 plugin backed by GDAL's S57 reader. Release **0.2.0** includes a generic, source-only [air-gap installation kit](airgap/README.md) maintained on `main`. Tested Java targets are **GeoServer 2.28.0 / GeoTools 34.0** and **GeoServer 3.0.2 / GeoTools 35.2**; other versions require rebuilding and validation. One catalogue store serves the **entire active NOAA ENC catalogue** through WMS and GeoWebCache WMTS. It indexes actual chart coverage, selects cells by scale and clips overlapping coverage. Adjacent updates are applied to immutable, indexed GeoPackage snapshots. Single `.000` stores remain supported.
 
 The supplied portrayal compiler uses pinned OpenCPN S-52 colours, raster symbols, lookup tables, and HPGL patterns/lines. It supplies depth bands, selected safety contours, compound sounding glyphs, light sectors/characteristics, topmarks, formatted labels, scale filtering, and day/dusk/night presets. Versioned [native edge metadata](docs/edge-metadata.md) handles conditional shared-edge priorities, masks, spatial-quality segments and precomputed lookup selection. **Portrayal is experimental and incomplete; this is not an ECDIS implementation or a claim of S-52 conformance.** See [portrayal coverage](docs/portrayal.md) and the [latest OpenCPN comparison and CPU/RAM/disk measurements](docs/portrayal-2026-11-17.md).
 
@@ -79,11 +79,17 @@ The bootstrap preserves an existing demo data directory. Stop the foreground ser
 For a **lean, source-only offline image build**, use the [air-gap build kit](airgap/README.md).
 It defaults to Kartoza GeoServer **2.28.0**, accepts other prepared base images and library paths,
 and contains only production sources, required resources, build configuration and notices.
-Create the ZIP with `python3 scripts/package_airgap.py`. The [full Kartoza guide](docs/kartoza-2.28.0.md)
-also covers the optional chart publisher and the compatibility validation.
+Create `dist/gs-s57-0.2.0-airgap-build.zip` with `python3 scripts/package_airgap.py`.
+The [v0.2.0 release](https://github.com/AShapira/geoserver-enc-plugin/releases/tag/v0.2.0)
+provides that lean ZIP and its checksum; GitHub's automatic source archives contain the full repository.
+The kit requires an existing image with JDK 17/21, matching GeoServer/GeoTools GeoPackage
+libraries, and GDAL with S57/GPKG/SQLite drivers and its native libraries/data.
+Its [manual](airgap/README.md) lists all build/runtime dependencies, optional tooling,
+and the exact versions tested. The [full Kartoza guide](docs/kartoza-2.28.0.md) also
+covers the optional chart publisher and the compatibility validation.
 
-1. Use **GeoServer 3.0.2**, Java 17 or 21, and GDAL 3.2+ with S57 and GPKG drivers (tested with 3.8.4 in the container and 3.11.5 in development). Ensure GDAL's data dictionaries and PROJ data are available to the server process.
-2. Build with `mvn package`. Copy **only** `target/gs-s57-0.1.0.jar` into `WEB-INF/lib`, then restart GeoServer. The tested GeoServer binary already contains `gt-geopkg` and its dependencies; do not replace GeoTools JARs. If your custom distribution omits them, install its matching GeoPackage support first.
+1. Use a tested target with Java 17 or 21, and GDAL 3.2+ with S57, GPKG and SQLite drivers (tested with 3.8.4 in containers and 3.11.5 in development). Ensure GDAL's data dictionaries and PROJ data are available to the server process.
+2. Build with `mvn package` for GeoServer 3.0.2, or `mvn -Pgeoserver-2.28 package` for 2.28.0. Stop GeoServer, remove an older S-57 plugin JAR if upgrading, copy **only** `target/gs-s57-0.2.0.jar` into `WEB-INF/lib`, then restart. The tested binaries already contain `gt-geopkg` and its dependencies; do not replace GeoTools JARs. If your custom distribution omits them, install its matching GeoPackage support first.
 3. Add a store of type **S-57 ENC (GDAL)**, supplying:
 
 | Parameter | Value |
