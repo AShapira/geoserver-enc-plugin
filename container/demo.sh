@@ -8,10 +8,25 @@ name=geoserver-enc
 format=()
 if [[ "$engine" == *podman ]]; then format=(--format docker); fi
 "$engine" build "${format[@]}" -f container/Dockerfile -t "$image" .
-for volume in geoserver-enc-catalogue geoserver-enc-cache geoserver-enc-data; do
+data_volume=geoserver-enc-data
+cache_volume=geoserver-enc-cache
+catalogue_volume=geoserver-enc-catalogue
+if "$engine" container inspect "$name" >/dev/null 2>&1; then
+  # The active server can use a rehearsed copy of the original volumes.
+  volume_at() {
+    "$engine" inspect --format "{{range .Mounts}}{{if eq .Destination \"$1\"}}{{.Name}}{{end}}{{end}}" "$name"
+  }
+  data_volume=$(volume_at /opt/geoserver_data)
+  cache_volume=$(volume_at /opt/enc-cache)
+  catalogue_volume=$(volume_at /opt/enc-data)
+  [[ -n "$data_volume" && -n "$cache_volume" && -n "$catalogue_volume" ]] || {
+    echo 'This launcher requires named volumes at its three documented mount points.' >&2; exit 1;
+  }
+fi
+for volume in "$catalogue_volume" "$cache_volume" "$data_volume"; do
   "$engine" volume inspect "$volume" >/dev/null 2>&1 || "$engine" volume create "$volume"
 done
-"$engine" run --rm --volume geoserver-enc-catalogue:/opt/enc-data --entrypoint /bin/bash "$image" -c '
+"$engine" run --rm --volume "$catalogue_volume":/opt/enc-data --entrypoint /bin/bash "$image" -c '
   set -euo pipefail
   if [[ ! -f /opt/enc-data/catalogue.sqlite ]]; then
     mkdir -p /opt/enc-data/downloads
@@ -33,9 +48,9 @@ else
   "$engine" run -d --name "$name" --label org.enc.project=geoserver-enc-plugin --restart unless-stopped \
     --memory "${ENC_MEMORY:-6g}" \
     -p "127.0.0.1:${ENC_PORT:-18080}:8080" \
-    --volume geoserver-enc-data:/opt/geoserver_data \
-    --volume geoserver-enc-catalogue:/opt/enc-data:ro \
-    --volume geoserver-enc-cache:/opt/enc-cache "$image"
+    --volume "$data_volume":/opt/geoserver_data \
+    --volume "$catalogue_volume":/opt/enc-data:ro \
+    --volume "$cache_volume":/opt/enc-cache "$image"
 fi
 ready=false
 for ((i=0;i<120;i++)); do
@@ -43,12 +58,7 @@ for ((i=0;i<120;i++)); do
   sleep 1
 done
 [[ "$ready" == true ]] || { "$engine" logs --tail 50 "$name"; exit 1; }
-for palette in day dusk night; do
-  "$engine" exec -e "GEOSERVER_PASSWORD=${GEOSERVER_PASSWORD:-geoserver}" "$name" \
-    python3 /opt/enc/scripts/publish.py --catalogue /opt/enc-data/catalogue.sqlite --url http://127.0.0.1:8080/geoserver \
-    --workspace noaa --data-dir /opt/geoserver_data --cache /opt/enc-cache --ogr2ogr /usr/bin/ogr2ogr \
-    --styles "/opt/enc/generated-$palette" --palette "$palette" --update
- done
+"$engine" exec -e GEOSERVER_USER -e GEOSERVER_PASSWORD "$name" python3 /opt/enc/scripts/deployment.py existing-noaa --if-missing
 "$engine" exec "$name" python3 /opt/enc/scripts/warm_catalogue.py --catalogue /opt/enc-data/catalogue.sqlite --cache /opt/enc-cache
 "$engine" exec "$name" java -Xmx2g -cp '/usr/local/tomcat/webapps/geoserver/WEB-INF/lib/*' \
   org.enc.geoserver.EdgeCache /opt/enc-data/catalogue.sqlite /opt/enc-cache /usr/bin/ogr2ogr "${ENC_EDGE_WORKERS:-4}"

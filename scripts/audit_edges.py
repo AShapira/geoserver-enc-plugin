@@ -13,7 +13,7 @@ from cache_key import snapshot_path
 def audit(catalogue,cache,ogr2ogr,out):
     started=time.monotonic()
     xml=Path(__file__).resolve().parents[1]/'portrayal/upstream/chartsymbols.xml'
-    revision=hashlib.sha256(b'enc-edges-2:lookup-3:conditional-priority-spatial-quality'+xml.read_bytes()).hexdigest()[:16]
+    revision=hashlib.sha256(b'enc-edges-2:lookup-4:inland-classes'+xml.read_bytes()).hexdigest()[:16]
     version=subprocess.check_output([str(ogr2ogr),'--version'],text=True).strip()
     totals=dict(cells=0,edges=0,features=0,links=0,point_quality=0,masked_links=0,quality_edges=0,unreliable_edges=0,unreliable_point_primitives=0,conditional_restrictions=0,contour_candidates=0,unmatched_lookups=0,bytes=0)
     edge_quality={};point_quality={}

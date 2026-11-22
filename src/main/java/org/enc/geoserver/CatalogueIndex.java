@@ -62,7 +62,9 @@ final class CatalogueIndex {
                     double[] contours=contourText==null || contourText.isBlank()?new double[0]:Arrays.stream(contourText.split(",")).mapToDouble(Double::parseDouble).toArray();
                     Cell cell=new Cell(rows.getString(1),source,rows.getInt(3),rows.getInt(4),coverage,
                         Map.copyOf(counts.getOrDefault(rows.getString(1),Map.of())),contours);
-                    cells.add(cell);bounds.expandToInclude(coverage.getEnvelopeInternal());
+                    cells.add(cell);
+                    if(coverage.isEmpty()) continue;
+                    bounds.expandToInclude(coverage.getEnvelopeInternal());
                     for(int i=0;i<coverage.getNumGeometries();i++) tree.insert(coverage.getGeometryN(i).getEnvelopeInternal(),cell);
                 }
             }
@@ -87,10 +89,11 @@ final class CatalogueIndex {
         for(Cell cell:ordered) {
             if(!cell.coverage().intersects(window)) continue;
             Geometry area=overlay(cell.coverage(),window,OverlayNG.INTERSECTION);
-            Geometry visible=covered==null?area:overlay(area,covered,OverlayNG.DIFFERENCE);
+            boolean overlay=cell.band()==99;
+            Geometry visible=overlay||covered==null?area:overlay(area,covered,OverlayNG.DIFFERENCE);
             if(visible.isEmpty() || visible.getDimension()<2 || visible.getArea()==0) continue;
-            result.add(new Selection(cell,visible,covered));
-            covered=covered==null?area:overlay(covered,area,OverlayNG.UNION);
+            result.add(new Selection(cell,visible,overlay?null:covered));
+            if(!overlay) covered=covered==null?area:overlay(covered,area,OverlayNG.UNION);
         }
         return List.copyOf(result);
     }

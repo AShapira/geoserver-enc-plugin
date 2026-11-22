@@ -2,7 +2,7 @@
 
 Project source is GPL-2.0-or-later. See `LICENSE`. The distributed plugin links to GeoTools and is designed for GeoServer; their own licenses continue to apply.
 
-`portrayal/upstream/chartsymbols.xml` and the three `rastersymbols-*.png` files are unmodified copies from **OpenCPN/OpenCPN**, commit `8c8d64570a80e0791e3b7c0a1a88f9315eea09e7`. OpenCPN and its contributors retain their copyrights. The original GPL v2 license text is preserved in `portrayal/upstream/COPYING`; exact source URLs and SHA-256 hashes are in `portrayal/upstream/manifest.json`. Generated SLDs, cropped symbols and HPGL renderings derive from these resources and are distributed under GPL-2.0-or-later with this source. No official IHO conformance or endorsement is implied.
+The files `chartsymbols.xml`, `s57objectclasses.csv`, `s57attributes.csv` and the three `rastersymbols-*.png` images under `portrayal/upstream/` are unmodified copies from **OpenCPN/OpenCPN**, commit `8c8d64570a80e0791e3b7c0a1a88f9315eea09e7`. OpenCPN and its contributors retain their copyrights. The original GPL v2 license text is preserved in `portrayal/upstream/COPYING`; exact source URLs and SHA-256 hashes are in `portrayal/upstream/manifest.json`. Generated SLDs, cropped symbols and HPGL renderings derive from these resources and are distributed under GPL-2.0-or-later with this source. No official IHO conformance or endorsement is implied.
 
 Source: https://github.com/OpenCPN/OpenCPN/tree/8c8d64570a80e0791e3b7c0a1a88f9315eea09e7/data/s57data
 

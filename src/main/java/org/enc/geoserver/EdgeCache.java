@@ -16,7 +16,7 @@ public final class EdgeCache {
     static final String FORMAT="enc-edges-2";
     static final String REVISION=revision();
     private static String revision(){try {
-        var digest=MessageDigest.getInstance("SHA-256");digest.update((FORMAT+":lookup-3:conditional-priority-spatial-quality").getBytes(StandardCharsets.UTF_8));
+        var digest=MessageDigest.getInstance("SHA-256");digest.update((FORMAT+":lookup-4:inland-classes").getBytes(StandardCharsets.UTF_8));
         try(var in=EdgeCache.class.getResourceAsStream("s52/chartsymbols.xml")){digest.update(in.readAllBytes());}
         return HexFormat.of().formatHex(digest.digest()).substring(0,16);
     }catch(Exception e){throw new ExceptionInInitializerError(e);}}
@@ -84,25 +84,29 @@ public final class EdgeCache {
                         points.put((table.equals("IsolatedNode")?110:120)+":"+rs.getInt(1),new PointQuality(rs.getBytes(2),rs.getObject(3),rs.getObject(4)));
                 }
             }
+            Set<Integer> incompleteEdges=new HashSet<>();
+            statement.execute("CREATE TABLE omitted_links(class TEXT,rcid INTEGER,edge INTEGER,reason TEXT)");
             if(tables.contains("Edge"))try(var s=in.createStatement();var rs=s.executeQuery("SELECT RCID,GEOMETRY,NAME_RCID_0,NAME_RCID_1,QUAPOS,POSACC FROM Edge");var put=db.prepareStatement("INSERT INTO edges VALUES(?,?,?,?,?,?)")) {
                 while(rs.next()) {
                     int id=rs.getInt(1),start=rs.getInt(3),end=rs.getInt(4);Coordinate a=nodes.get(start),b=nodes.get(end);
-                    if(a==null||b==null)throw new IOException("Missing connected node for edge "+id);
+                    if(a==null||b==null){incompleteEdges.add(id);continue;}
                     List<Coordinate> coordinates=new ArrayList<>();coordinates.add(a);
                     byte[] bytes=rs.getBytes(2);if(bytes!=null)Collections.addAll(coordinates,reader.read(bytes).getCoordinates());coordinates.add(b);
                     put.setInt(1,id);put.setBytes(2,writer.write(gf.createLineString(coordinates.toArray(Coordinate[]::new))));
                     put.setInt(3,start);put.setInt(4,end);put.setObject(5,rs.getObject(5));put.setObject(6,rs.getObject(6));put.addBatch();edgeIds.add(id);
                 }put.executeBatch();
             }
-            try(var feature=db.prepareStatement("INSERT INTO features VALUES(?,?,?,?,?,?,?,?,?,?)");var link=db.prepareStatement("INSERT INTO links VALUES(?,?,?,?,?,?,?)");var point=db.prepareStatement("INSERT INTO point_quality VALUES(?,?,?,?,?,?)")) {
+            try(var feature=db.prepareStatement("INSERT INTO features VALUES(?,?,?,?,?,?,?,?,?,?)");var link=db.prepareStatement("INSERT INTO links VALUES(?,?,?,?,?,?,?)");var omitted=db.prepareStatement("INSERT INTO omitted_links VALUES(?,?,?,'missing endpoint')");var point=db.prepareStatement("INSERT INTO point_quality VALUES(?,?,?,?,?,?)")) {
                 for(String type:tables) {
-                    if(!type.matches("[A-Z][A-Z0-9_]{4,7}") || type.startsWith("M_") || type.startsWith("C_"))continue;
+                    String acronym=type.startsWith("i_")?type.substring(2):type;
+                    if(!acronym.matches("[A-Za-z][A-Za-z0-9_]{4,7}") || acronym.equals("Generic")
+                            || acronym.toUpperCase(Locale.ROOT).startsWith("M_") || acronym.toUpperCase(Locale.ROOT).startsWith("C_"))continue;
                     try(var s=in.createStatement();var rs=s.executeQuery("SELECT * FROM "+quote(type))) {
                         var md=rs.getMetaData();List<String> names=new ArrayList<>();for(int c=1;c<=md.getColumnCount();c++)names.add(md.getColumnName(c));
                         if(!names.contains("PRIM"))continue;
                         while(rs.next()) {
                             Map<String,Object> attrs=new HashMap<>();for(int c=1;c<=names.size();c++)if(!names.get(c-1).equals("GEOMETRY"))attrs.put(names.get(c-1),rs.getObject(c));
-                            int rcid=rs.getInt("RCID"),prim=rs.getInt("PRIM");var rule=S52Lookup.INSTANCE.select(type,prim,attrs);
+                            int rcid=rs.getInt("RCID"),prim=rs.getInt("PRIM");var rule=S52Lookup.INSTANCE.select(acronym,prim,attrs);
                             double scamin=attrs.get("SCAMIN") instanceof Number n?n.doubleValue():0;
                             if(rule!=null&&rule.base())scamin=0;
                             feature.setString(1,type);feature.setInt(2,rcid);feature.setInt(3,rule==null?-1:rule.id());feature.setInt(4,rule==null?-1:rule.priority(attrs));
@@ -112,6 +116,10 @@ public final class EdgeCache {
                             int[] ids=integers(attrs.get("NAME_RCID")),kinds=integers(attrs.get("NAME_RCNM")),orient=integers(attrs.get("ORNT")),usage=integers(attrs.get("USAG")),mask=integers(attrs.get("MASK"));
                             if(ids.length!=kinds.length||ids.length!=orient.length||ids.length!=usage.length||ids.length!=mask.length)throw new IOException("Inconsistent FSPT arrays: "+type+"/"+rcid);
                             for(int i=0;i<ids.length;i++)if(kinds[i]==130) {
+                                if(incompleteEdges.contains(ids[i])){
+                                    omitted.setString(1,type);omitted.setInt(2,rcid);omitted.setInt(3,ids[i]);omitted.addBatch();
+                                    continue;
+                                }
                                 if(!edgeIds.contains(ids[i]))throw new IOException("Missing edge "+ids[i]+" for "+type+"/"+rcid);
                                 link.setString(1,type);link.setInt(2,rcid);link.setInt(3,i);link.setInt(4,ids[i]);link.setInt(5,orient[i]);link.setInt(6,usage[i]);link.setInt(7,mask[i]);link.addBatch();
                             }else if(prim==1){
@@ -119,13 +127,14 @@ public final class EdgeCache {
                                 point.setString(1,type);point.setInt(2,rcid);point.setInt(3,i);point.setBytes(4,p.geometry());point.setObject(5,p.quapos());point.setObject(6,p.posacc());point.addBatch();
                             }
                         }
-                    }feature.executeBatch();link.executeBatch();point.executeBatch();
+                    }feature.executeBatch();link.executeBatch();point.executeBatch();omitted.executeBatch();
                 }
             }
             statement.execute("CREATE INDEX edge_owners ON links(edge)");
             try(var put=db.prepareStatement("INSERT INTO metadata VALUES(?,?)")){
                 for(var e:Map.of("format",FORMAT,"revision",REVISION,"snapshot",identity).entrySet()){put.setString(1,e.getKey());put.setString(2,e.getValue());put.addBatch();}put.executeBatch();
             }
+            if(!incompleteEdges.isEmpty())statement.executeUpdate("INSERT INTO metadata VALUES('edges_without_endpoints','"+incompleteEdges.size()+"')");
             db.commit();try(var rs=statement.executeQuery("PRAGMA quick_check")){if(!rs.next()||!rs.getString(1).equals("ok"))throw new IOException("Sidecar integrity failed");}
         }catch(SQLException|ParseException error){throw new IOException("Cannot prepare native edge metadata",error);}
     }

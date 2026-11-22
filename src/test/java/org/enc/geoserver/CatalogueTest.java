@@ -26,6 +26,14 @@ class CatalogueTest {
         assertFalse(result.get(1).visible().contains(GF.createPoint(new Coordinate(2,2))));
         assertEquals(10,detail.safetyContour(5));
     }
+    @Test void bathymetricOverlayRetainsTheUnderlyingChart() {
+        var base=cell("US5TESTA",2000,new Envelope(0,2,0,2),Map.of("LIGHTS",1L));
+        var overlay=new CatalogueIndex.Cell("3RBD0000",Path.of("overlay.000"),1000,99,
+            GF.toGeometry(new Envelope(0,2,0,2)),Map.of("SOUNDG",10L),new double[0]);
+        var result=CatalogueIndex.quilt(List.of(base,overlay),new Envelope(0,2,0,2),2000);
+        assertEquals(2,result.size());
+        assertTrue(result.stream().allMatch(s->s.visible().getArea()==4));
+    }
     @Test void scaleRejectsOverDetailedCellsAndEqualScaleOwnershipIsStable() {
         var a=cell("US4TESTA",10000,new Envelope(0,4,0,4),Map.of());
         var b=cell("US4TESTB",10000,new Envelope(1,3,1,3),Map.of());

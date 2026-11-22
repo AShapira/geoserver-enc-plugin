@@ -16,6 +16,14 @@
     "rastersymbols-dark.png": {
       "url": "https://raw.githubusercontent.com/OpenCPN/OpenCPN/8c8d64570a80e0791e3b7c0a1a88f9315eea09e7/data/s57data/rastersymbols-dark.png",
       "sha256": "179cb516fd1a7795e8ab9ecbb8d4d5d88bf15cf42e5528c2f4e3ea2340320c33"
+    },
+    "s57objectclasses.csv": {
+      "url": "https://raw.githubusercontent.com/OpenCPN/OpenCPN/8c8d64570a80e0791e3b7c0a1a88f9315eea09e7/data/s57data/s57objectclasses.csv",
+      "sha256": "5e823ae9b78fa8f976b16231b96548215fb020fb3f83751748c7e767b9ea232a"
+    },
+    "s57attributes.csv": {
+      "url": "https://raw.githubusercontent.com/OpenCPN/OpenCPN/8c8d64570a80e0791e3b7c0a1a88f9315eea09e7/data/s57data/s57attributes.csv",
+      "sha256": "61c3fc9db5cfbc0aaefdcfb17474d64b56db7e7be6238974f6f1a11680a6b2c7"
     }
   }
 }

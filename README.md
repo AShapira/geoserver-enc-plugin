@@ -1,12 +1,33 @@
 # GeoServer S-57 ENC plugin
 
-A read-only GeoServer S-57 plugin backed by GDAL's S57 reader. Release **0.2.0** includes a generic, source-only [air-gap installation kit](airgap/README.md) maintained on `main`. Tested Java targets are **GeoServer 2.28.0 / GeoTools 34.0** and **GeoServer 3.0.2 / GeoTools 35.2**; other versions require rebuilding and validation. One catalogue store serves the **entire active NOAA ENC catalogue** through WMS and GeoWebCache WMTS. It indexes actual chart coverage, selects cells by scale and clips overlapping coverage. Adjacent updates are applied to immutable, indexed GeoPackage snapshots. Single `.000` stores remain supported.
+A read-only GeoServer S-57 plugin backed by GDAL's S57 reader. Release **0.3.0** adds multi-source ENC deployment with shared chart styles and includes a source-only [air-gap installation kit](airgap/README.md) maintained on `main`. Tested Java targets are **GeoServer 2.28.0 / GeoTools 34.0** and **GeoServer 3.0.2 / GeoTools 35.2**; other versions require rebuilding and validation. Each catalogue store serves a complete S-57 exchange set through WMS and GeoWebCache WMTS. It indexes actual chart coverage, selects cells by scale and clips overlapping coverage. Adjacent updates are applied to immutable, indexed GeoPackage snapshots. Single `.000` stores remain supported.
 
 The supplied portrayal compiler uses pinned OpenCPN S-52 colours, raster symbols, lookup tables, and HPGL patterns/lines. It supplies depth bands, selected safety contours, compound sounding glyphs, light sectors/characteristics, topmarks, formatted labels, scale filtering, and day/dusk/night presets. Versioned [native edge metadata](docs/edge-metadata.md) handles conditional shared-edge priorities, masks, spatial-quality segments and precomputed lookup selection. **Portrayal is experimental and incomplete; this is not an ECDIS implementation or a claim of S-52 conformance.** See [portrayal coverage](docs/portrayal.md) and the [latest OpenCPN comparison and CPU/RAM/disk measurements](docs/portrayal-2026-11-17.md).
 
+## Deploy an ENC collection
+
+| Task | Manual |
+| --- | --- |
+| Install the full server online, add a provider or local exchange, verify the charts, or roll back a workspace | [Publish an ENC collection](docs/publishing-guide.md) |
+| Transport the full chart service and data to a disconnected site | [Air-gapped deployment](docs/airgap-deployment.md) |
+| Build the extension into an existing GeoServer image offline | [Source-only kit](airgap/README.md) |
+| Maintain the original NOAA XML/archive demo | [NOAA catalogue maintenance](docs/noaa-catalogue-maintenance.md) |
+
+**Quick start for an already running multi-source server.** In a Bash shell on its host, run from the matching checkout. A named provider prepares the exchange directory. The same deployment command accepts your own extracted S-57 exchange. All workspaces share portrayal styles and graphics.
+
+```bash
+set -euo pipefail
+python3 enc prepare --provider be_coast --out exchanges/belgium
+python3 enc deploy exchanges/belgium --workspace be_coast
+podman exec geoserver-enc python3 /opt/enc/scripts/check_sources.py \
+  --url http://127.0.0.1:8080/geoserver --workspace be_coast
+```
+
+Open the [chart viewer](http://127.0.0.1:18080/enc.html) and select the source. For an unattended deployment with generation checks and a saved WMS/WMTS receipt, follow [Publish and verify](docs/publishing-guide.md#publish-and-verify).
+
 ## Try the NOAA demo
 
-Run from this directory with Podman and network access:
+For a fresh NOAA demo, run from this directory with Podman and network access. This launcher uses the original three-volume NOAA layout. To add NOAA to an existing two-volume chart server, use `enc prepare --provider noaa` and the generic publishing guide.
 
 ```bash
 container/demo.sh
@@ -21,8 +42,6 @@ The container runs detached as `geoserver-enc`, publishes IPv4 loopback port 180
 ```bash
 container/demo.sh --recreate
 podman logs --tail 50 geoserver-enc
-podman stop geoserver-enc
-podman start geoserver-enc
 ```
 
 If an immediate restart reports pasta `Address already in use`, let the old port forwarder exit, then run `podman start geoserver-enc` again. This transient Podman behavior occurred once during validation; the volumes and publication were retained.
@@ -40,7 +59,8 @@ Endpoints:
 - Groups: `noaa:chart_day`, `noaa:chart_dusk`, `noaa:chart_night`.
 - WMTS grid sets: `EPSG:4326` and `EPSG:900913` (Web Mercator).
 
-See [full-catalogue validation](docs/catalogue-validation.md), [container build](container/Dockerfile) and [design decisions](docs/decisions.md).
+See the [step-by-step NOAA setup and update guide](docs/noaa-catalogue-maintenance.md),
+[full-catalogue validation](docs/catalogue-validation.md), [container build](container/Dockerfile) and [design decisions](docs/decisions.md).
 
 ### Optional single-cell development demo
 
@@ -79,9 +99,8 @@ The bootstrap preserves an existing demo data directory. Stop the foreground ser
 For a **lean, source-only offline image build**, use the [air-gap build kit](airgap/README.md).
 It defaults to Kartoza GeoServer **2.28.0**, accepts other prepared base images and library paths,
 and contains only production sources, required resources, build configuration and notices.
-Create `dist/gs-s57-0.2.0-airgap-build.zip` with `python3 scripts/package_airgap.py`.
-The [v0.2.0 release](https://github.com/AShapira/geoserver-enc-plugin/releases/tag/v0.2.0)
-provides that lean ZIP and its checksum; GitHub's automatic source archives contain the full repository.
+Run `python3 scripts/package_airgap.py` from the v0.3.0 checkout to create
+`dist/gs-s57-0.3.0-airgap-build.zip` and its SHA-256 checksum.
 The kit requires an existing image with JDK 17/21, matching GeoServer/GeoTools GeoPackage
 libraries, and GDAL with S57/GPKG/SQLite drivers and its native libraries/data.
 Its [manual](airgap/README.md) lists all build/runtime dependencies, optional tooling,
@@ -89,13 +108,13 @@ and the exact versions tested. The [full Kartoza guide](docs/kartoza-2.28.0.md) 
 covers the optional chart publisher and the compatibility validation.
 
 1. Use a tested target with Java 17 or 21, and GDAL 3.2+ with S57, GPKG and SQLite drivers (tested with 3.8.4 in containers and 3.11.5 in development). Ensure GDAL's data dictionaries and PROJ data are available to the server process.
-2. Build with `mvn package` for GeoServer 3.0.2, or `mvn -Pgeoserver-2.28 package` for 2.28.0. Stop GeoServer, remove an older S-57 plugin JAR if upgrading, copy **only** `target/gs-s57-0.2.0.jar` into `WEB-INF/lib`, then restart. The tested binaries already contain `gt-geopkg` and its dependencies; do not replace GeoTools JARs. If your custom distribution omits them, install its matching GeoPackage support first.
+2. Build with `mvn package` for GeoServer 3.0.2, or `mvn -Pgeoserver-2.28 package` for 2.28.0. Stop GeoServer, remove an older S-57 plugin JAR if upgrading, copy **only** `target/gs-s57-0.3.0.jar` into `WEB-INF/lib`, then restart. The tested binaries already contain `gt-geopkg` and its dependencies; do not replace GeoTools JARs. If your custom distribution omits them, install its matching GeoPackage support first.
 3. Add a store of type **S-57 ENC (GDAL)**, supplying:
 
 | Parameter | Value |
 | --- | --- |
 | `dbtype` | `s57` |
-| `catalogue` | Absolute path to a prepared `catalogue.sqlite`; use this for the full NOAA catalogue |
+| `catalogue` | Absolute path to a prepared `catalogue.sqlite`; use this for an indexed S-57 exchange set |
 | `file` | Alternative absolute path to one `.000` file; specify exactly one of `file` and `catalogue` |
 | `cache` | Absolute writable cache directory, outside the source exchange set |
 | `ogr2ogr` | Absolute path to GDAL's `ogr2ogr` executable |
@@ -130,6 +149,8 @@ Set `--palette dusk` or `--palette night`, `--styles portrayal/generated-night`,
 The source path, GDAL executable and cache directory are server-side paths. These store settings require trusted GeoServer administrators. Windows deployments need a compatible native GDAL executable; they have not been tested here.
 
 ## Updates and cache lifecycle
+
+For a workspace installed by `enc deploy`, follow [Refresh or restore a source](docs/publishing-guide.md#refresh-or-restore-a-source). The original NOAA demo has a [separate catalogue update procedure](docs/noaa-catalogue-maintenance.md#8-updating-an-existing-catalogue). Use the container engine’s stop/start commands for an ordinary restart. The current demo launcher skips initial NOAA publication when the source registry already contains NOAA. A legacy publication can lack that entry.
 
 Keep each edition's base and update files together. `fetch_noaa.py` extracts every downloaded exchange set into a content-addressed directory, preventing old sidecars from mixing with a new edition. Do not overwrite source files while an import is running.
 

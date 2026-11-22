@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+"""Prepare portable exchange sets or deploy them to the local GeoServer container."""
+import argparse
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'scripts'))
+from providers import PROFILES, prepare
+
+parser = argparse.ArgumentParser(description=__doc__)
+commands = parser.add_subparsers(dest='command', required=True)
+prep = commands.add_parser('prepare')
+inputs = prep.add_mutually_exclusive_group(required=True)
+inputs.add_argument('--provider', choices=PROFILES)
+inputs.add_argument('--archive', nargs='+', type=Path)
+prep.add_argument('--out', type=Path, required=True)
+deploy = commands.add_parser('deploy')
+deploy.add_argument('directory', type=Path)
+deploy.add_argument('--workspace', required=True)
+deploy.add_argument('--title')
+deploy.add_argument('--view', nargs=3, type=float, metavar=('LONGITUDE','LATITUDE','ZOOM'), help='opening map position and integer Web Mercator zoom')
+deploy.add_argument('--container', default=os.environ.get('ENC_CONTAINER','geoserver-enc'))
+deploy.add_argument('--workers', default=4, type=int)
+a = parser.parse_args()
+if a.command == 'prepare':
+    prepare(a.out, a.provider, a.archive)
+else:
+    if not re.fullmatch('[A-Za-z][A-Za-z0-9_]*',a.workspace) or not 1 <= a.workers <= 16:
+        parser.error('Use a simple workspace name and 1–16 workers')
+    if a.view:
+        lon,lat,zoom = a.view
+        if not (-180 <= lon <= 180 and -85 <= lat <= 85 and zoom.is_integer() and 2 <= zoom <= 20):
+            parser.error('Use longitude ±180, latitude ±85 and zoom 2–20')
+        a.view = [lon,lat,int(zoom)]
+    source = a.directory.resolve(strict=True)
+    if not source.is_dir():
+        parser.error('Supply an extracted exchange directory')
+    engine = os.environ.get('CONTAINER_ENGINE','podman')
+    info, = json.loads(subprocess.check_output([engine,'inspect',a.container]))
+    mount, = [m for m in info['Mounts'] if m['Destination'] == '/opt/enc-cache' and m['RW']]
+    cache = mount.get('Name') if mount['Type']=='volume' else mount['Source']
+    common = ['python3','/opt/enc/scripts/deployment.py']
+    command = [engine,'run','--rm','--pull=never','--network','none','--volume',f'{source}:/input:ro',
+        '--volume',f'{cache}:/opt/enc-cache','--entrypoint',common[0],info['Image'],common[1],
+        'stage','/input',a.workspace,str(a.workers)]
+    generation = None
+    with subprocess.Popen(command, stdout=subprocess.PIPE, text=True) as child:
+        for line in child.stdout:
+            print(line, end='', flush=True)
+            if re.fullmatch(r'ENC_GENERATION=[0-9a-f]{64}',line.strip()):
+                generation = line.strip().split('=')[1]
+        if child.wait() or generation is None:
+            sys.exit('Exchange staging failed')
+    subprocess.run([engine,'exec','-e','GEOSERVER_USER','-e','GEOSERVER_PASSWORD',a.container,*common,
+        'publish',a.workspace,generation,a.title or '',json.dumps(a.view)],check=True)

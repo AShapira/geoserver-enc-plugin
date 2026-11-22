@@ -1,0 +1,947 @@
+{
+  "sources": {
+    "be_coast": {
+      "title": "Belgian coast and waterways",
+      "product": "Inland ENC",
+      "attribution": "Flemish Hydrography and contributing authorities. API/Service IENC incorporated from EuRIS (eurisportal.eu)",
+      "source": "https://www.eurisportal.eu/enc",
+      "view": [
+        3.191318,
+        51.349201,
+        17
+      ],
+      "bbox": [
+        2.4729373,
+        50.4616666,
+        6.0,
+        51.4492219
+      ],
+      "cells": 118,
+      "generation": "daafc7893d612b3f47bc5becd49b227d6fce6fdc4eb188e431d5c75314ab036a",
+      "portrayal_version": 2,
+      "updated_cells": 2,
+      "max_applied_update": 2,
+      "source_features": 538214,
+      "base_files": 118,
+      "archive_sha256": "0e96667a5594a2cec7d3f52a3aef36e14a2a4205106751969b1374b759cfdb90",
+      "coverage_repairs": 3,
+      "prepared_utc": "2026-11-19T04:27:39.723226+00:00",
+      "packages": [
+        {
+          "name": "BE",
+          "source": "https://www.eurisportal.eu/AWFIENC/api/IENC/DownloadIENCExportFile?country=BE",
+          "directory": "package-001",
+          "sha256": "0e4ec6c4900f6045c35709e35297df2e8efcab9e08bd0cce2709b3deca2dc3db"
+        }
+      ],
+      "conversion": {
+        "cells": 118,
+        "converted": 118,
+        "failures": [],
+        "gdal": "GDAL 3.8.4, released 2024/02/08 enc-inland-2",
+        "seconds": 4.3
+      },
+      "edge_validation": "Validated 118/118; created 118; failed 0; 11.7s",
+      "portrayed_classes": 110,
+      "unportrayed_classes": {
+        "C_AGGR": 498,
+        "C_ASSO": 19,
+        "i_comare": 111,
+        "i_lg_sdm": 30,
+        "i_lg_vsp": 15,
+        "i_m_nsys": 118,
+        "i_m_sdat": 1,
+        "i_m_vdat": 1,
+        "i_prtare": 2,
+        "i_wtware": 24
+      },
+      "opening_view_checks": {
+        "day": {
+          "wms_sha256": "d89b0e8ad577975cd519032d7279f3c19cac9bcf557e6a477f62f614e0aef32f",
+          "wmts_sha256": "306f37ca7bdc68d7824c1520427b4c5f2e69fc28ec620550516105080c56bba8",
+          "repeat": "HIT"
+        },
+        "dusk": {
+          "wms_sha256": "3c5252702f78b199573153cac06212e51b47a5ae3d9808a0a692ca92f8695168",
+          "wmts_sha256": "21932e8c3c1cdbf9effc953a57cbc1dbadf8c2ea3afcf6b1a68de399cc2f0c8b",
+          "repeat": "HIT"
+        },
+        "night": {
+          "wms_sha256": "90d4c7cd02672d2b2fb4041c0a7cff5a2f1af1911b7de449694b42f9c9c9e83c",
+          "wmts_sha256": "50ea8b1cd77c22afb4e635f604be6706955b777538b9c73f21adfcf8d9746234",
+          "repeat": "HIT"
+        }
+      },
+      "browser_view": {
+        "colors": 1813,
+        "status": "Drag to pan · Scroll to zoom",
+        "source": "be_coast:chart_day",
+        "view": 17,
+        "credit": "Inland ENC · Flemish Hydrography and contributing authorities. API/Service IENC incorporated from EuRIS (eurisportal.eu)"
+      }
+    },
+    "de_wsv": {
+      "title": "German federal waterways",
+      "product": "Inland ENC",
+      "attribution": "Wasserstraßen- und Schifffahrtsverwaltung des Bundes (WSV), GeoNutzV",
+      "source": "https://www.elwis.de/DE/dynamisch/IENC/",
+      "view": [
+        13.322821,
+        52.543987,
+        18
+      ],
+      "bbox": [
+        6.0562769,
+        48.492552,
+        14.7788274,
+        53.9879461
+      ],
+      "cells": 479,
+      "generation": "3aa745fe7d9aaabd1d184b4872770ae70f6e7a84943943fa3b0d845c1aa6022c",
+      "portrayal_version": 2,
+      "updated_cells": 0,
+      "max_applied_update": 0,
+      "source_features": 600353,
+      "base_files": 479,
+      "archive_sha256": "0c52694559d483cd9a68c94bd4012e7e75db495948ec273892eb2b1caeeb5c28",
+      "coverage_repairs": 0,
+      "prepared_utc": "2026-11-19T04:27:39.723654+00:00",
+      "packages": [
+        {
+          "name": "WW92_2025-09-01_0_11",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW92_2025-09-01_0_11:%20Berlin-Spandauer-Schifffahrtskanal",
+          "directory": "package-001",
+          "sha256": "fc9ce89677016ced4a932229076be556b1d5639ce29effc9a1a4b4e720c56521"
+        },
+        {
+          "name": "WW113_2025-06-03_1_26",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW113_2025-06-03_1_26:%20Dahme-Wasserstra%C3%9Fe",
+          "directory": "package-002",
+          "sha256": "4c850c45cf5be007a0a1b51c1ab5e2c90adb98ddca4f53a91335d6fb63ff7c0f"
+        },
+        {
+          "name": "WW11_2023-03-22_0_47",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW11_2023-03-22_0_47:%20Datteln-Hamm-Kanal",
+          "directory": "package-003",
+          "sha256": "4f39e0bf9597bd65911949f0a10a28ab5abd35ff46edc514a13774c6e22a8034"
+        },
+        {
+          "name": "WW33_2026-05-20_2201_2415",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW33_2026-05-20_2201_2415:%20Donau",
+          "directory": "package-004",
+          "sha256": "98a9ada2f0e9453e00b8b7f78fd2842716ef4653f018a2e85e1cab6aa785a8e4"
+        },
+        {
+          "name": "WW12_2023-12-20_1_226",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW12_2023-12-20_1_226:%20Dortmund-Ems-Kanal",
+          "directory": "package-005",
+          "sha256": "bcf0f4c49295647825a4dde3350a09daf03e4d8e46948bb8bca88581f109dbfe"
+        },
+        {
+          "name": "WW60_2026-02-06_0_619",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW60_2026-02-06_0_619:%20Elbe",
+          "directory": "package-006",
+          "sha256": "2fdff4ea766b1ddaf37670b6aa82057adb873d31f2923b7b9572e07faded4e68"
+        },
+        {
+          "name": "WW70_2026-01-28_325_381",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW70_2026-01-28_325_381:%20Elbe-Havel-Kanal",
+          "directory": "package-007",
+          "sha256": "ef1363aa7c330d1b5bf83529290149a31617dd9f5c93527606891ca134b680ac"
+        },
+        {
+          "name": "WW64_2025-04-25_0_62",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW64_2025-04-25_0_62:%20Elbe-L%C3%BCbeck-Kanal",
+          "directory": "package-008",
+          "sha256": "3c2f5f5714c1befe3090ee841013e84988b34c135ba3ffb3ea2e31993c25c31d"
+        },
+        {
+          "name": "WW37_2021-05-27_0_115",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW37_2021-05-27_0_115:%20Elbe-Seitenkanal",
+          "directory": "package-009",
+          "sha256": "bc902ced4eb25c376bface37a870a6f965df5e9799911aeb9739cf3e3d7926a2"
+        },
+        {
+          "name": "WW120_2026-07-14_0_134",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW120_2026-07-14_0_134:%20Havel-Oder-Wasserstra%C3%9Fe",
+          "directory": "package-010",
+          "sha256": "6ddadeede72b9c4ba0ddb74dc3b7fa9b9b54fd207ff19a9df2fe1c8ed039ac0d"
+        },
+        {
+          "name": "WW76_2026-07-14_2_32",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW76_2026-07-14_2_32:%20Havelkanal",
+          "directory": "package-011",
+          "sha256": "c8c2e28407f86f0480b8fcbe6f7f6ac190dcc4033f21b8aed756a85227733693"
+        },
+        {
+          "name": "WW53_2025-03-26_0_25",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW53_2025-03-26_0_25:%20Hunte",
+          "directory": "package-012",
+          "sha256": "bc94019d937de9a4ace84c79797110a48244d38ce7a07a682c00e6caed2cb4ba"
+        },
+        {
+          "name": "WW156_2025-09-18_0_6",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW156_2025-09-18_0_6:%20Kanaltrave",
+          "directory": "package-013",
+          "sha256": "941a4e4dfa45ce7cd2230d4c979e4c7ebaed7841c063651690def090d93621df"
+        },
+        {
+          "name": "WW18_2023-12-20_0_70",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW18_2023-12-20_0_70:%20K%C3%BCstenkanal",
+          "directory": "package-014",
+          "sha256": "247c90c00ce9377dfc1f3a9a65d6bed81ea84d43803a4e1f9dc48aee7d85fc97"
+        },
+        {
+          "name": "WW28_2024-12-17_130_137",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW28_2024-12-17_130_137:%20Lahn",
+          "directory": "package-015",
+          "sha256": "82b819e06a7496adcef07cc9e0b2382bc8507c6a1e71166aa92c3dd2c7fa43ec"
+        },
+        {
+          "name": "WW103_2025-09-01_1_10",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW103_2025-09-01_1_10:%20Landwehrkanal",
+          "directory": "package-016",
+          "sha256": "4f37944fe3ba13a792cd53b5e4ece12f3b3a43e1fa54157846fd883aeda185cd"
+        },
+        {
+          "name": "WW34_2026-06-03_0_388",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW34_2026-06-03_0_388:%20Main",
+          "directory": "package-017",
+          "sha256": "5beb01f7329773ccf522d1496b05bb118ca42c43fe8064b3bd37b41bfb647063"
+        },
+        {
+          "name": "WW35_2025-07-22_0_171",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW35_2025-07-22_0_171:%20Main-Donau-Kanal",
+          "directory": "package-018",
+          "sha256": "6915582c044ef087ce377a2b868aa80b36d55d458f04228d2d8defa2b39aa720"
+        },
+        {
+          "name": "WW41_2021-06-01_0_318",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW41_2021-06-01_0_318:%20Mittellandkanal",
+          "directory": "package-019",
+          "sha256": "e77e15fac7cc96951261841d1604aa7e17bee14770884c69aa88e7be4fe4aa35"
+        },
+        {
+          "name": "WW46_2021-05-18_0_11",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW46_2021-05-18_0_11:%20Mittellandkanal%20Stichkanal%20Hannover-Linden",
+          "directory": "package-020",
+          "sha256": "78a14979cfb53b2b6943aa21ac7c51acf65c487b6902fe480f4718abd594d940"
+        },
+        {
+          "name": "WW49_2021-05-17_0_14",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW49_2021-05-17_0_14:%20Mittellandkanal%20Stichkanal%20Hildesheim",
+          "directory": "package-021",
+          "sha256": "4b665e0e13e8fa464073009b1aaf7829234f97f20f3a04c355763600997a8c60"
+        },
+        {
+          "name": "WW43_2021-05-31_0_13",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW43_2021-05-31_0_13:%20Mittellandkanal%20Stichkanal%20Osnabr%C3%BCck",
+          "directory": "package-022",
+          "sha256": "5a62f26a75ff84259c19151b8632718d73781e5d30b4e367f9f9c978774ba2ed"
+        },
+        {
+          "name": "WW50_2021-05-18_0_18",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW50_2021-05-18_0_18:%20Mittellandkanal%20Stichkanal%20Salzgitter",
+          "directory": "package-023",
+          "sha256": "f4e9f2d9852ead2646e61212caf18151b0af5fa06cad6f106707683cb01c4f9d"
+        },
+        {
+          "name": "WW29_2026-04-09_0_242",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW29_2026-04-09_0_242:%20Mosel",
+          "directory": "package-024",
+          "sha256": "c3af6085b18b52ce255415fafba01b794e545b818030efd4dba7b6bd965accd2"
+        },
+        {
+          "name": "WW30_2025-07-25_0_203",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW30_2025-07-25_0_203:%20Neckar",
+          "directory": "package-025",
+          "sha256": "41c7f7e7e05bd156f43089baabbb79d32c1cc363aaaf5b13315f60e9d6e495c7"
+        },
+        {
+          "name": "WW135_2025-09-03_542_705",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW135_2025-09-03_542_705:%20Oder",
+          "directory": "package-026",
+          "sha256": "13fa83f442a0517a4635ce4368d560aa640a586bc953c3f5bee32f1888ff8e2b"
+        },
+        {
+          "name": "WW155_2025-03-28_30_98",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW155_2025-03-28_30_98:%20Peene",
+          "directory": "package-027",
+          "sha256": "06dde8e3619af01ac82ccd56d1574cb36c80d9844647b549c83e3c2a75bedb88"
+        },
+        {
+          "name": "WW77_2024-12-17_3_29",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW77_2024-12-17_3_29:%20Potsdamer%20Havel",
+          "directory": "package-028",
+          "sha256": "3f08cfcc32f284a2d463e72f31eae7b0af43ca5de1210382b8432b0de03f43de"
+        },
+        {
+          "name": "WW31_2026-06-14_310_866",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW31_2026-06-14_310_866:%20Rhein",
+          "directory": "package-029",
+          "sha256": "61af0619bffb08bcd11778c7655156d46d76c77ef01f5b0c32e583ca09e703b4"
+        },
+        {
+          "name": "WW21_2023-12-20_10_45",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW21_2023-12-20_10_45:%20Rhein-Herne-Kanal",
+          "directory": "package-030",
+          "sha256": "0b16ed5eae87f1d7953e119dd36e986bb71dacd0cb828792fd0b300e475a01bb"
+        },
+        {
+          "name": "WW23_2021-03-17_0_12",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW23_2021-03-17_0_12:%20Ruhr",
+          "directory": "package-031",
+          "sha256": "d74b009d51cac1c47f5a603a1d1265f042dbef8da170be3a1fa988d3690ddee3"
+        },
+        {
+          "name": "WW66_2025-07-04_5_95",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW66_2025-07-04_5_95:%20Saale",
+          "directory": "package-032",
+          "sha256": "e3bcaa7234339c484f966e07f271f1110e372a14a9eec576dbaf343f06ec3e00"
+        },
+        {
+          "name": "WW32_2025-07-25_0_105",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW32_2025-07-25_0_105:%20Saar",
+          "directory": "package-033",
+          "sha256": "3d0351db1d94b288af741a835065db0ac245f0dab48c3586956283218ddf236a"
+        },
+        {
+          "name": "WW96_2025-09-01_1_129",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW96_2025-09-01_1_129:%20Spree-Oder-Wasserstra%C3%9Fe",
+          "directory": "package-034",
+          "sha256": "cf861e0ec2ab2d7224d193fe4aab18ee6a04bb467ea5342732c9112ccb5730b7"
+        },
+        {
+          "name": "WW116_2025-06-03_3_34",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW116_2025-06-03_3_34:%20Storkower%20Gew%C3%A4sser",
+          "directory": "package-035",
+          "sha256": "b242790501830d52ec835ff8d8eaf7677b11e46d5b906d9fa6ff38923506b1a7"
+        },
+        {
+          "name": "WW107_2025-06-25_0_37",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW107_2025-06-25_0_37:%20Teltowkanal",
+          "directory": "package-036",
+          "sha256": "e1aa74888f83e3f142e7b9718505fa2c7dfc76604688f1b8349a9850c6c43125"
+        },
+        {
+          "name": "WW115_2025-06-03_1_19",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW115_2025-06-03_1_19:%20Teupitzer%20Gew%C3%A4sser",
+          "directory": "package-037",
+          "sha256": "6b77cce38eb48f8745a13a18f73ebaa0e841e899d601816b5778814f761d4be4"
+        },
+        {
+          "name": "WW175_2025-05-30_70_155",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW175_2025-05-30_70_155:%20Untere%20Havel-Wasserstra%C3%9Fe%20%28Plaue%20-%20Elbe%29",
+          "directory": "package-038",
+          "sha256": "84a15c1989f03e4f13a45eecbadf129b686575ca314faff432f1278bfa7ef052"
+        },
+        {
+          "name": "WW82_2026-07-14_0_69",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW82_2026-07-14_0_69:%20Untere%20Havel-Wasserstra%C3%9Fe%20%28Spandau%20-%20Plaue%29",
+          "directory": "package-039",
+          "sha256": "7a8bc9f596a5a6ebebdcfe0919a96dab7482f8486ff31f5bba790ad9458e0e58"
+        },
+        {
+          "name": "WW27_2023-12-20_0_60",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW27_2023-12-20_0_60:%20Wesel-Datteln-Kanal",
+          "directory": "package-040",
+          "sha256": "aaea71338764281f83eb4ee97bebebebf1b3cef9a970a9b82720b1d740d3e51e"
+        },
+        {
+          "name": "WW52_2025-03-26_210_367",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW52_2025-03-26_210_367:%20Weser",
+          "directory": "package-041",
+          "sha256": "4351a807746fb134c9cb13c4decfb3d6659feca0e777fbfa5dbaca1f46414827"
+        },
+        {
+          "name": "WW134_2025-09-03_1_17",
+          "source": "https://www.elwis.de/DE/dynamisch/IENC/File:WW134_2025-09-03_1_17:%20Westoder",
+          "directory": "package-042",
+          "sha256": "a2776037fe801d4d2c78396ce18c3ddc26d86e2cf6412d869f4e364b4017d847"
+        }
+      ],
+      "conversion": {
+        "cells": 479,
+        "converted": 0,
+        "failures": [],
+        "gdal": "GDAL 3.8.4, released 2024/02/08 enc-inland-2",
+        "seconds": 1.2
+      },
+      "edge_validation": "Validated 479/479; created 2; failed 0; 1.2s",
+      "portrayed_classes": 100,
+      "unportrayed_classes": {
+        "C_AGGR": 3303,
+        "i_comare": 409,
+        "i_m_nsys": 479,
+        "i_m_sdat": 23,
+        "i_m_vdat": 8,
+        "i_wtware": 92
+      },
+      "opening_view_checks": {
+        "day": {
+          "wms_sha256": "6131e98de11076b9ebb7497692d62b632657defbf4df299f92bf205bf9b97d15",
+          "wmts_sha256": "b24380d11f7f62f5543529657f11f3fcbbda86c9bc5fdc9d02ae441c6fad413a",
+          "repeat": "HIT"
+        },
+        "dusk": {
+          "wms_sha256": "c98ef6b13e7b8170c93b395b5af9424ba3cab80469132770ca0f7f903dfa925d",
+          "wmts_sha256": "11057a22c99c8c5958afae58a518162eaa2624afe13177a57c85a2dc43ab68a5",
+          "repeat": "HIT"
+        },
+        "night": {
+          "wms_sha256": "62a1a370b4847af9aa3bc579f327d7721fc7a174b90f0db15a3cc4b5980d33c4",
+          "wmts_sha256": "8c83d2e6bdf005df146948e6bebbbc5e1f1f824254dcb997c86bb252b81c27bc",
+          "repeat": "HIT"
+        }
+      },
+      "browser_view": {
+        "colors": 1907,
+        "status": "Drag to pan · Scroll to zoom",
+        "source": "de_wsv:chart_day",
+        "view": 18,
+        "credit": "Inland ENC · Wasserstraßen- und Schifffahrtsverwaltung des Bundes (WSV), GeoNutzV"
+      },
+      "source_topology_omissions": {
+        "1W7MA230": {
+          "edges_without_endpoints": 1,
+          "omitted_feature_links": 3
+        },
+        "1W7MA240": {
+          "edges_without_endpoints": 2,
+          "omitted_feature_links": 2
+        }
+      }
+    },
+    "nl_rws": {
+      "title": "Dutch inland and coastal waters",
+      "product": "Inland ENC",
+      "attribution": "Rijkswaterstaat, CC0",
+      "source": "https://www.vaarweginformatie.nl/frp/page/infra_enc",
+      "view": [
+        3.60626,
+        51.440269,
+        18
+      ],
+      "bbox": [
+        3.1333333,
+        50.757502,
+        7.2166667,
+        53.5833333
+      ],
+      "cells": 190,
+      "generation": "2ffe0f119049438b0caca632e29c9326dfeee8bfcf7f459576ae5cd8636bb5be",
+      "portrayal_version": 2,
+      "updated_cells": 14,
+      "max_applied_update": 5,
+      "source_features": 1254380,
+      "base_files": 190,
+      "archive_sha256": "ea8ac4c749ac1ba5a70eb8445682ea744a2be5e1378508556386f713a123f8ba",
+      "coverage_repairs": 0,
+      "prepared_utc": "2026-11-19T04:27:39.721889+00:00",
+      "packages": [
+        {
+          "name": "Nederland",
+          "source": "https://www.vaarweginformatie.nl/fdd/main/download?fileId=4825590565",
+          "directory": "package-001",
+          "sha256": "c1d15003fb5bbbbc64ed1b73b01b751d472783340b104a9a980b98848cde5fea"
+        },
+        {
+          "name": "Zeeland",
+          "source": "https://www.vaarweginformatie.nl/fdd/main/download?fileId=4827616646",
+          "directory": "package-002",
+          "sha256": "cc98e78d78b13a0ea5991a7cce11500c8f98d221c6dcb793aba4138d07c0e509"
+        },
+        {
+          "name": "Waddenzee",
+          "source": "https://www.vaarweginformatie.nl/fdd/main/download?fileId=4823599211",
+          "directory": "package-003",
+          "sha256": "39765e46c0bd0b60ef0d3bcec8d1c455c4ae42e8f7efed249f8e86ae07d3050a"
+        }
+      ],
+      "conversion": {
+        "cells": 190,
+        "converted": 0,
+        "failures": [],
+        "gdal": "GDAL 3.8.4, released 2024/02/08 enc-inland-2",
+        "seconds": 0.5
+      },
+      "edge_validation": "Validated 190/190; created 0; failed 0; 0.1s",
+      "portrayed_classes": 124,
+      "unportrayed_classes": {
+        "C_AGGR": 1207,
+        "i_comare": 239,
+        "i_lg_sdm": 320,
+        "i_m_nsys": 227,
+        "i_prtare": 2
+      },
+      "opening_view_checks": {
+        "day": {
+          "wms_sha256": "8a76afbc515df9cd305fc0c60f452498946d70b42af43615fa2eb9a3756fd53b",
+          "wmts_sha256": "1b343e04605fba86c0975e748d7b6777ac1a6b84f1f1e5d916342ab74ee1cbfa",
+          "repeat": "HIT"
+        },
+        "dusk": {
+          "wms_sha256": "10b0d1b51ff888e2cd367d5c10fe7c18af428766ec531338cd63d9c1caef5820",
+          "wmts_sha256": "85bef1283529669571114ee3367f9e06fd096ef029b0a092e55673f9dc66c764",
+          "repeat": "HIT"
+        },
+        "night": {
+          "wms_sha256": "0450187d591c44ccf4c0bb06d468f9cc6b76915799b221a2878097ca48ad1af7",
+          "wmts_sha256": "c6e22ca53b00850203031a140eb3b9b291ee058160fa96c2bb3b8445e79be90d",
+          "repeat": "HIT"
+        }
+      },
+      "browser_view": {
+        "colors": 4020,
+        "status": "Drag to pan · Scroll to zoom",
+        "source": "nl_rws:chart_day",
+        "view": 18,
+        "credit": "Inland ENC · Rijkswaterstaat, CC0"
+      },
+      "reader_limitations": [
+        "GDAL 3.8 reads a nonnumeric UNKNOWN obstruction depth in 1R7EMS02 as zero."
+      ]
+    },
+    "usace": {
+      "title": "US Army Corps of Engineers",
+      "product": "Inland ENC",
+      "attribution": "USACE Army Geospatial Center",
+      "source": "https://ienccloud.us/ienc_s57.html",
+      "view": [
+        -80.015,
+        40.441,
+        15
+      ],
+      "bbox": [
+        -96.6997465,
+        29.669777,
+        -79.465556,
+        45.142195
+      ],
+      "cells": 109,
+      "generation": "91537dbd904124125c0f35c6545e9d0aacb3f0edd72112a1403067f7edbb752e",
+      "portrayal_version": 2,
+      "updated_cells": 75,
+      "max_applied_update": 21,
+      "source_features": 442759,
+      "base_files": 109,
+      "archive_sha256": "a59a015f79851a9fe74a6edecd1c9353cdb5b382d4fe3771189ec4691d7938d7",
+      "coverage_repairs": 0,
+      "prepared_utc": "2026-11-19T04:27:39.722704+00:00",
+      "packages": [
+        {
+          "name": "all",
+          "source": "https://ienccloud.us/ienc/products/files/u37/ienc_s57/ienc_s57.zip",
+          "directory": "package-001",
+          "sha256": "8d155b270a38ab80465e3b306fa4b29a52d3be06d0f8ef803df7611eb788e68b"
+        }
+      ],
+      "conversion": {
+        "cells": 109,
+        "converted": 0,
+        "failures": [],
+        "gdal": "GDAL 3.8.4, released 2024/02/08 enc-inland-2",
+        "seconds": 0.4
+      },
+      "edge_validation": "Validated 109/109; created 0; failed 0; 0.1s",
+      "portrayed_classes": 75,
+      "unportrayed_classes": {
+        "C_AGGR": 973,
+        "Generic": 141,
+        "i_m_nsys": 109
+      },
+      "opening_view_checks": {
+        "day": {
+          "wms_sha256": "452705cb0c4a7b1c9466e6235e0f4dd6a82fb49f83d8cbd9a7b64e0b7c63ab68",
+          "wmts_sha256": "25444671e008d01e0978a39dee0f6e4567d70d75753566cb8f9d989156ea61f5",
+          "repeat": "HIT"
+        },
+        "dusk": {
+          "wms_sha256": "9ba16f4f356b867a926dd5ab142cc097b10bce06e8077224241e3fc181392525",
+          "wmts_sha256": "58a44b8c5e2ba81f2ff2179bcfbbfd0d08f22b2465169b5a197d6f55b40ee811",
+          "repeat": "HIT"
+        },
+        "night": {
+          "wms_sha256": "2b0191b8e0732fbacc4cbb8b778f96999895486c324a4d51685b980dba5b566b",
+          "wmts_sha256": "2f48ed5fb2fec83fd12a95a14dab1ab64a2194c9173b63d63f73fd0039f664f4",
+          "repeat": "HIT"
+        }
+      },
+      "browser_view": {
+        "colors": 5448,
+        "status": "Drag to pan · Scroll to zoom",
+        "source": "usace:chart_day",
+        "view": 15,
+        "credit": "Inland ENC · USACE Army Geospatial Center"
+      }
+    },
+    "noaa": {
+      "title": "NOAA ENC",
+      "product": "Maritime ENC",
+      "attribution": "NOAA Office of Coast Survey",
+      "source": "https://charts.noaa.gov/ENCs/ENCs.shtml",
+      "view": [
+        -74.01,
+        40.69,
+        13
+      ],
+      "bbox": [
+        -180.0,
+        -78.3333333,
+        180.0,
+        81.6
+      ],
+      "cells": 7114,
+      "generation": "1d61c657968ac6c338cc243309d2f8ccc32776ea3c971f957f333de3796e1c40",
+      "portrayal_version": 2,
+      "updated_cells": 2140,
+      "max_applied_update": 27,
+      "source_features": 6965828,
+      "archive_sha256": "1d61c657968ac6c338cc243309d2f8ccc32776ea3c971f957f333de3796e1c40",
+      "coverage_repairs": 0,
+      "catalogue_valid": "2026-11-14T05:58:23Z",
+      "catalogue_sha256": "e2ab8cee6d84048604efdceeed4b71f317f64c67beb485b5de482643bd5fb060",
+      "portrayed_classes": 137,
+      "unportrayed_classes": {
+        "C_AGGR": 2270,
+        "C_ASSO": 756
+      },
+      "opening_view_checks": {
+        "day": {
+          "wms_sha256": "1c00ea9cc4ebe88907090c1881104e69d9a4cc6a48cdeb2bcc95d8a67abb040e",
+          "wmts_sha256": "9a9c58b4c9490136ff9edfc493ac38b6f4860b5c51762adbbc661470c07bee89",
+          "repeat": "HIT"
+        },
+        "dusk": {
+          "wms_sha256": "01f9cec2c38c822e9e261fa591b89f1266c1b6729b4a60cbf1ff2e979259f704",
+          "wmts_sha256": "d8502a63020370985d64f1e3b13f81934350d512a5194d9ec1bb32d5d0a84625",
+          "repeat": "HIT"
+        },
+        "night": {
+          "wms_sha256": "6995a18394d087403ed542ad0fc6de82298eefef73665f99d1982be1265b0313",
+          "wmts_sha256": "50f77e9910094380cadfd5b118d414d59c9d79e0616805c9b79a51ce772fdcee",
+          "repeat": "HIT"
+        }
+      },
+      "browser_view": {
+        "colors": 14464,
+        "status": "Drag to pan · Scroll to zoom",
+        "source": "noaa:chart_day",
+        "view": 13,
+        "credit": "Maritime ENC · NOAA Office of Coast Survey"
+      }
+    },
+    "ro_danube": {
+      "title": "Lower Danube and Black Sea approaches",
+      "product": "Inland ENC",
+      "attribution": "Lower Danube River Administration and contributing authorities. API/Service IENC incorporated from EuRIS (eurisportal.eu)",
+      "source": "https://www.eurisportal.eu/enc",
+      "view": [
+        29.667537,
+        45.157542,
+        18
+      ],
+      "bbox": [
+        21.2447019,
+        43.5839486,
+        29.8260182,
+        45.4967865
+      ],
+      "cells": 177,
+      "generation": "632b5b2b4e8c9694a49f12b70357444cd7a4f5b9ce63c7e0777888dcb30d8905",
+      "portrayal_version": 2,
+      "updated_cells": 154,
+      "max_applied_update": 200,
+      "source_features": 95801,
+      "base_files": 177,
+      "archive_sha256": "099ca6279ca2d1b3278a7e0143e8280a637a8bd77663f67f05ecec3e5dbef617",
+      "coverage_repairs": 11,
+      "unclassified_coverage": [
+        "2P7D0942"
+      ],
+      "filename_aliases": {
+        "3R7SFG01": "3R7SFG08",
+        "3R7SFG02": "3R7SFG07",
+        "3R7SFG03": "3R7SFG06",
+        "3R7SFG04": "3R7SFG05",
+        "3R7SFG05": "3R7SFG04",
+        "3R7SFG06": "3R7SFG03",
+        "3R7SFG07": "3R7SFG02",
+        "3R7SFG08": "3R7SFG01"
+      },
+      "prepared_utc": "2026-11-19T04:27:39.722337+00:00",
+      "packages": [
+        {
+          "name": "RO",
+          "source": "https://www.eurisportal.eu/AWFIENC/api/IENC/DownloadIENCExportFile?country=RO",
+          "directory": "package-001",
+          "sha256": "8612cf6e0c4218e2aac0a5824f786b4ceddf595eb7b689c4c499bbc3c0be3bba"
+        }
+      ],
+      "restored_cells": [
+        {
+          "file": "package-001/3R7PAM02/3R7PAM02.000",
+          "source": "https://www.danubeportal.com/application/cache/uploads/charts/electronic/RO/10/1726821665.zip",
+          "archive_sha256": "b7f07c9c58a40670136ced2ea8d12ce6e93e54bb498c1cba5052ead1d34f3953",
+          "original_edition_update": "1/5",
+          "replacement_edition_update": "1/7",
+          "original_sha256": "de64f200199068147443730b17ae9c369bb483f828e2c2fe297da7e290b07f9e",
+          "sha256": "72b8331bb759f65197295f40057fcbe351bc6633bc00ba2b35d2e01346c8cfb0"
+        }
+      ],
+      "conversion": {
+        "cells": 177,
+        "converted": 177,
+        "failures": [],
+        "gdal": "GDAL 3.8.4, released 2024/02/08 enc-inland-2",
+        "seconds": 4.0
+      },
+      "edge_validation": "Validated 177/177; created 177; failed 0; 10.7s",
+      "portrayed_classes": 87,
+      "unportrayed_classes": {
+        "C_AGGR": 39,
+        "C_ASSO": 50,
+        "i_comare": 17,
+        "i_m_nsys": 154,
+        "i_prtare": 16
+      },
+      "opening_view_checks": {
+        "day": {
+          "wms_sha256": "0c857b90da1af7d8aee68342d4736b35feb3516af659f9feb4b2261694672586",
+          "wmts_sha256": "74bf80cee58ea99da0613acd044a6063bf465473ce6615b238ce5a3e710f63e6",
+          "repeat": "HIT"
+        },
+        "dusk": {
+          "wms_sha256": "3f4c52a63eedf66bcc739123cd92156fbe63c9316c3d668ea3471a43ddddc46a",
+          "wmts_sha256": "8d11a698afdd9bdc9de3bd352cd5cd45aafb5b6dc168e71753174717941019b8",
+          "repeat": "HIT"
+        },
+        "night": {
+          "wms_sha256": "44154ec775ac842fb79a03ced408dfc124dd17366f51fc6bb7150c43d9e6303a",
+          "wmts_sha256": "23613727cf70ba3d2626ff26b578ec7845344bce98c986ac6842fe12964081c3",
+          "repeat": "HIT"
+        }
+      },
+      "browser_view": {
+        "colors": 1853,
+        "status": "Drag to pan · Scroll to zoom",
+        "source": "ro_danube:chart_day",
+        "view": 18,
+        "credit": "Inland ENC · Lower Danube River Administration and contributing authorities. API/Service IENC incorporated from EuRIS (eurisportal.eu)"
+      },
+      "verified_reissue_attachments": [
+        "3R7PAM0104.TIF",
+        "3R7PAM0105.TIF"
+      ]
+    }
+  },
+  "unique_group_styles": 702,
+  "styles_used_by_multiple_workspaces": 543,
+  "date": "2026-11-19",
+  "service": "http://127.0.0.1:18080/geoserver",
+  "style_readback": {
+    "groups": 18,
+    "unique_group_styles": 702,
+    "shared_by_multiple_sources": 543,
+    "example_shared_by_all": "enc_day_DEPARE_1_5087a18dd516ea3b8f16"
+  },
+  "noaa_regional_checks": {
+    "new-york": {
+      "bbox": [
+        -74.06,
+        40.6,
+        -73.94,
+        40.75
+      ],
+      "wms_seconds": 4.014,
+      "png_bytes": 323644
+    },
+    "san-francisco": {
+      "bbox": [
+        -122.55,
+        37.74,
+        -122.32,
+        37.88
+      ],
+      "wms_seconds": 5.544,
+      "png_bytes": 361791
+    },
+    "chesapeake": {
+      "bbox": [
+        -76.5,
+        36.88,
+        -76.2,
+        37.12
+      ],
+      "wms_seconds": 3.828,
+      "png_bytes": 211606
+    },
+    "chicago": {
+      "bbox": [
+        -87.68,
+        41.77,
+        -87.48,
+        41.97
+      ],
+      "wms_seconds": 1.722,
+      "png_bytes": 277127
+    },
+    "seattle": {
+      "bbox": [
+        -122.48,
+        47.52,
+        -122.28,
+        47.72
+      ],
+      "wms_seconds": 4.467,
+      "png_bytes": 271131
+    },
+    "alaska": {
+      "bbox": [
+        -150.13,
+        61.1,
+        -149.75,
+        61.35
+      ],
+      "wms_seconds": 1.293,
+      "png_bytes": 169686
+    },
+    "hawaii": {
+      "bbox": [
+        -157.97,
+        21.24,
+        -157.79,
+        21.39
+      ],
+      "wms_seconds": 2.674,
+      "png_bytes": 224994
+    },
+    "guam": {
+      "bbox": [
+        144.59,
+        13.38,
+        144.75,
+        13.53
+      ],
+      "wms_seconds": 1.489,
+      "png_bytes": 192784
+    },
+    "overview": {
+      "bbox": [
+        -130,
+        22,
+        -60,
+        52
+      ],
+      "wms_seconds": 3.174,
+      "png_bytes": 102464
+    },
+    "wmts-day": {
+      "url": "http://127.0.0.1:18080/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=noaa%3Achart_day&STYLE=&FORMAT=image%2Fpng&TILEMATRIXSET=EPSG%3A900913&TILEMATRIX=EPSG%3A900913%3A13&TILEROW=3080&TILECOL=2411",
+      "first_seconds": 0.006,
+      "second_result": "HIT"
+    },
+    "wmts-dusk": {
+      "url": "http://127.0.0.1:18080/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=noaa%3Achart_dusk&STYLE=&FORMAT=image%2Fpng&TILEMATRIXSET=EPSG%3A900913&TILEMATRIX=EPSG%3A900913%3A13&TILEROW=3080&TILECOL=2411",
+      "first_seconds": 0.003,
+      "second_result": "HIT"
+    },
+    "wmts-night": {
+      "url": "http://127.0.0.1:18080/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=noaa%3Achart_night&STYLE=&FORMAT=image%2Fpng&TILEMATRIXSET=EPSG%3A900913&TILEMATRIX=EPSG%3A900913%3A13&TILEROW=3080&TILECOL=2411",
+      "first_seconds": 0.003,
+      "second_result": "HIT"
+    },
+    "wms_axis_order_equal": true
+  },
+  "source_feature_checks": [
+    {
+      "workspace": "de_wsv",
+      "cell": "1W7BSK01",
+      "object_class": "MORFAC",
+      "LNAM": "1F3068B577190082",
+      "name": null,
+      "point": [
+        13.322821,
+        52.543987
+      ]
+    },
+    {
+      "workspace": "nl_rws",
+      "cell": "1R75W83I",
+      "object_class": "LIGHTS",
+      "LNAM": "1F2B41F8F4A40166",
+      "name": null,
+      "point": [
+        3.60626,
+        51.440269
+      ]
+    },
+    {
+      "workspace": "usace",
+      "cell": "U37OH001",
+      "object_class": "i_bridge",
+      "LNAM": "3F4E00015C450001",
+      "name": "Fort Pitt Hwy Bridge",
+      "point": [
+        -80.013023,
+        40.438075
+      ]
+    },
+    {
+      "workspace": "be_coast",
+      "cell": "BE7EV001",
+      "object_class": "BOYLAT",
+      "LNAM": "001E01B7F3CF0001",
+      "name": "S9",
+      "point": [
+        3.2497911,
+        51.4069615
+      ]
+    },
+    {
+      "workspace": "be_coast",
+      "cell": "BE7EV004",
+      "object_class": "BOYLAT",
+      "LNAM": "001E01B7B9240001",
+      "name": "WeststroomBk",
+      "point": [
+        2.7172967,
+        51.1888892
+      ]
+    },
+    {
+      "workspace": "ro_danube",
+      "cell": "3R7D0000",
+      "object_class": "LNDMRK",
+      "LNAM": "3F4B5D37125A0001",
+      "name": "The Danube's European Commission Old Lighthouse",
+      "point": [
+        29.662694,
+        45.155305
+      ]
+    }
+  ],
+  "belgian_coast_checks": {
+    "BE7EV001": "S9 buoy, three WMS palettes, three WMTS palettes and repeat cache HITs",
+    "BE7EV004": "WeststroomBk buoy, three WMS palettes, three WMTS palettes and repeat cache HITs"
+  },
+  "repeat_deploy": [
+    "ENC_GENERATION=daafc7893d612b3f47bc5becd49b227d6fce6fdc4eb188e431d5c75314ab036a",
+    "be_coast already serves generation daafc7893d612b3f47bc5becd49b227d6fce6fdc4eb188e431d5c75314ab036a"
+  ],
+  "offline_local_exchange": [
+    "local_charts:chart_day: WMS 39860 bytes, WMTS 8965 bytes, HIT",
+    "local_charts:chart_dusk: WMS 31477 bytes, WMTS 7520 bytes, HIT",
+    "local_charts:chart_night: WMS 29045 bytes, WMTS 6954 bytes, HIT"
+  ],
+  "offline_source_rollback": {
+    "initial": "64ddd49a1f05e41385b17c4e52c876693f5318bdd85798f7055888e50f7c7533",
+    "updated": "acd5660d8d045678d5ae51709d5654a5b9b0e0257fcdd62f254bcd10a796ce1a",
+    "restored": "64ddd49a1f05e41385b17c4e52c876693f5318bdd85798f7055888e50f7c7533",
+    "restored_protocol_checks": [
+      "local_charts:chart_day: WMS 39860 bytes, WMTS 8965 bytes, HIT",
+      "local_charts:chart_dusk: WMS 31477 bytes, WMTS 7520 bytes, HIT",
+      "local_charts:chart_night: WMS 29045 bytes, WMTS 6954 bytes, HIT"
+    ]
+  }
+}

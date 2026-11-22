@@ -11,7 +11,7 @@ import org.geotools.geopkg.GeoPkgDataStoreFactory;
 public final class S57DataStoreFactory implements DataStoreFactorySpi {
     public static final Param TYPE = new Param("dbtype", String.class, "Database type", true, "s57");
     public static final Param FILE = new Param("file", String.class, "Local S-57 base cell (.000); leave empty for catalogue mode", false);
-    public static final Param CATALOGUE = new Param("catalogue", String.class, "Prepared NOAA catalogue.sqlite (all active cells)", false);
+    public static final Param CATALOGUE = new Param("catalogue", String.class, "Prepared S-57 catalogue.sqlite (active cells)", false);
     public static final Param POOL = new Param("cellPoolSize", Integer.class, "Maximum retained cell stores", false, 16);
     public static final Param SAFETY = new Param("safetyDepth", Double.class, "Safety depth in metres", false, 5.0);
     public static final Param CACHE = new Param("cache", String.class, "Writable ENC snapshot cache directory", true);

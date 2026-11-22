@@ -381,7 +381,7 @@ def generate(gpkg, out, palette='day', shallow=2, safety=5, deep=10):
         fields={schema.GetFieldDefn(i).GetName():schema.GetFieldDefn(i).GetTypeName() for i in range(schema.GetFieldCount())}
         if cls=='TOPMAR': fields['_enc_floating']='Integer'
         fields.update(PORTRAYAL_FIELDS)
-        groups=compiler.compile(cls,fields)
+        groups=compiler.compile(cls.removeprefix('i_'),fields)
         if not groups: continue
         merged=[]
         for priority,rules in sorted(groups.items()):
@@ -403,12 +403,24 @@ def generate(gpkg, out, palette='day', shallow=2, safety=5, deep=10):
 
 def generate_catalogue(index, out, palette='day', shallow=2, safety=5, deep=10):
     import sqlite3
+    from osgeo import ogr
     with sqlite3.connect(index) as db:
         classes=dict(db.execute('SELECT class,SUM(features) FROM cell_classes GROUP BY class'))
         schemas={}
         for cls,name,kind in db.execute('SELECT class,name,type FROM fields ORDER BY class,ordinal'):
             schemas.setdefault(cls,{})[name]=kind
         active=db.execute('SELECT COUNT(*) FROM cells').fetchone()[0]
+        bounds=[180.,90.,-180.,-90.]
+        preview=None
+        for (wkb,) in db.execute('SELECT coverage FROM cells ORDER BY name'):
+            geom=ogr.CreateGeometryFromWkb(wkb)
+            if geom.IsEmpty(): continue
+            x1,x2,y1,y2=geom.GetEnvelope()
+            bounds=[min(bounds[0],x1),min(bounds[1],y1),max(bounds[2],x2),max(bounds[3],y2)]
+            if preview is None:
+                point=geom.PointOnSurface()
+                x,y=point.GetX(),point.GetY()
+                preview=[x-.004,y-.003,x+.004,y+.003]
     compiler=Compiler(ROOT/'portrayal/upstream',out,palette,shallow,safety,deep)
     layers={};entries=[]
     for cls,fields in sorted(schemas.items()):
@@ -416,7 +428,7 @@ def generate_catalogue(index, out, palette='day', shallow=2, safety=5, deep=10):
         fields={**fields,'_enc_cell':'String','_enc_cscl':'Integer','_enc_safety_contour':'Real'}
         if cls=='TOPMAR': fields['_enc_floating']='Integer'
         fields.update(PORTRAYAL_FIELDS)
-        groups=compiler.compile(cls,fields)
+        groups=compiler.compile(cls.removeprefix('i_'),fields)
         if not groups: continue
         merged=[]
         for priority,rules in sorted(groups.items()):
@@ -427,7 +439,8 @@ def generate_catalogue(index, out, palette='day', shallow=2, safety=5, deep=10):
         layers[cls]={'style':default,'count':classes[cls]}
     manifest={'palette':palette,'shallow':shallow,'safety_depth':safety,'deep':deep,
         'safety_contour':'per-cell first available at or deeper than safetyDepth','active_cells':active,
-        'bbox':[-180,-85,180,85],'preview_bbox':[-74.06,40.60,-73.94,40.75],
+        'bbox':bounds,'preview_bbox':preview,
+        'unportrayed_classes':{c:n for c,n in classes.items() if n and c not in layers and not c.startswith('M_')},
         'layers':layers,'stack':sorted(entries,key=lambda e:(e['priority'],e['class'])),
         'limitations':sorted(compiler.issues),'symbols':compiler.assets}
     (out/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')

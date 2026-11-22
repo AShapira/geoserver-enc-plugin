@@ -2,6 +2,8 @@
 
 Prepared by Codex. Validation date: 2026-11-17.
 
+To deploy the multi-source viewer with named providers, shared styles, and verified WMS/WMTS groups, use the [full offline transfer](airgap-deployment.md) or the [online publishing guide](publishing-guide.md). This manual covers the Kartoza 2.28.0 image layout, its single-cell or prepared-catalogue store and its optional publisher.
+
 For a smaller source-only distribution, use the [lean air-gap build kit](../airgap/README.md)
 and `python3 scripts/package_airgap.py`. Its configurable Dockerfile adds only the plugin
 JAR to a prepared base image. The Python helpers described below belong to the full
@@ -97,13 +99,13 @@ Container-local changes made by `docker exec` are lost on recreation.
 
 ## Run and publish
 
-Example isolated instance; replace the source path and password:
+For a fresh isolated instance, set `GEOSERVER_ADMIN_PASSWORD` in the host environment, then substitute the absolute host path to your extracted exchange in the bind mount. For the optional publisher, export `GEOSERVER_PASSWORD="$GEOSERVER_ADMIN_PASSWORD"` before invoking the wrapper. Use the same engine and tag throughout. The Docker example uses `geoserver-s57:2.28.0`. For the Podman build above, use `podman` and `localhost/geoserver-s57:2.28.0`.
 
 ```bash
-docker run -d --name geoserver-s57 \
+docker run --pull=never -d --name geoserver-s57 \
   -p 127.0.0.1:18081:8080 \
   -e GEOSERVER_ADMIN_USER=admin \
-  -e GEOSERVER_ADMIN_PASSWORD='replace-this-password' \
+  -e GEOSERVER_ADMIN_PASSWORD \
   -e INITIAL_MEMORY=512M -e MAXIMUM_MEMORY=2G -e SAMPLE_DATA=false \
   --mount type=volume,src=geoserver-s57-228-data,dst=/opt/geoserver/data_dir \
   --mount type=bind,src=/absolute/path/to/enc,dst=/enc,readonly \
@@ -125,7 +127,7 @@ use the bundled full-chart publisher:
 ```bash
 docker exec \
   -e PYTHONPATH=/opt/enc/python \
-  -e GEOSERVER_PASSWORD='replace-this-password' \
+  -e GEOSERVER_PASSWORD \
   geoserver-s57 bash /opt/enc/publish.sh \
   /enc/YOUR_CELL.000 --workspace noaa --palette day
 ```
