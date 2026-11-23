@@ -20,10 +20,10 @@ final class S57DataStore extends ContentDataStore {
     private final DataStore delegate;
     private AtonContext context;
     private final Path metadataFile;
-    private final double safetyDepth;
+    private final PortrayalSchema.Depths depths;
     private EdgeContext metadata;
     private synchronized EdgeContext metadata() throws IOException {
-        if(metadata==null&&metadataFile!=null)metadata=new EdgeContext(metadataFile,safetyDepth);
+        if(metadata==null&&metadataFile!=null)metadata=new EdgeContext(metadataFile,depths.safety());
         return metadata;
     }
     private synchronized AtonContext context() throws IOException {
@@ -31,8 +31,8 @@ final class S57DataStore extends ContentDataStore {
         return context;
     }
     S57DataStore(DataStore delegate) { this(delegate,null); }
-    S57DataStore(DataStore delegate,Path metadataFile) {this(delegate,metadataFile,5);}
-    S57DataStore(DataStore delegate,Path metadataFile,double safetyDepth) { this.delegate = Objects.requireNonNull(delegate);this.metadataFile=metadataFile;this.safetyDepth=safetyDepth; }
+    S57DataStore(DataStore delegate,Path metadataFile) {this(delegate,metadataFile,new PortrayalSchema.Depths(2,5,10));}
+    S57DataStore(DataStore delegate,Path metadataFile,PortrayalSchema.Depths depths) { this.delegate = Objects.requireNonNull(delegate);this.metadataFile=metadataFile;this.depths=depths; }
     static void addPortrayalFields(SimpleFeatureTypeBuilder builder){
         builder.add("_enc_line",Geometry.class);builder.add("_enc_line_normal",Geometry.class);builder.add("_enc_line_quality",Geometry.class);
         builder.add("_enc_lookup",Integer.class);builder.add("_enc_priority",Integer.class);builder.add("_enc_safety",Integer.class);builder.add("_enc_quapos",Integer.class);
@@ -55,7 +55,10 @@ final class S57DataStore extends ContentDataStore {
                 if(!enriched) return schema;
                 var builder=new SimpleFeatureTypeBuilder();builder.init(schema);
                 if(topmark) builder.add("_enc_floating",Integer.class);
-                if(boundary)addPortrayalFields(builder);
+                if(boundary) {
+                    addPortrayalFields(builder);
+                    PortrayalSchema.extend(entry.getTypeName(),builder);
+                }
                 return builder.buildFeatureType();
             }
             @Override protected ReferencedEnvelope getBoundsInternal(Query query) throws IOException {
@@ -85,6 +88,7 @@ final class S57DataStore extends ContentDataStore {
                         for(var p:original.getProperties()) builder.set(p.getName().getLocalPart(),p.getValue());
                         if(topmark) builder.set("_enc_floating",parents.floating((Geometry)original.getDefaultGeometry()));
                         if(boundary){
+                            if (PortrayalSchema.supports(entry.getTypeName())) depths.set(builder);
                             int rcid=((Number)original.getAttribute("RCID")).intValue();
                             Geometry geometry=(Geometry)original.getDefaultGeometry();String type=entry.getTypeName();
                             builder.set("_enc_lookup",edges.lookup(entry.getTypeName(),rcid));

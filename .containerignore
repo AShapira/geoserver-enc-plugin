@@ -2,7 +2,7 @@
 !container/
 !container/**
 !target/
-!target/gs-s57-0.3.0.jar
+!target/gs-s57-0.4.0.jar
 !scripts/
 !scripts/*.py
 !portrayal/

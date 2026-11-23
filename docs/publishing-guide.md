@@ -170,7 +170,7 @@ Success means the block exits zero and the receipt includes `results.json` for d
 
 At the default host port, open the [viewer](http://127.0.0.1:18080/enc.html), choose **Source**, then try **Palette** and **Service**. Other GIS clients can discover `WORKSPACE:chart_day`, `chart_dusk` and `chart_night` through [WMS](http://127.0.0.1:18080/geoserver/wms?SERVICE=WMS&REQUEST=GetCapabilities) or [WMTS](http://127.0.0.1:18080/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetCapabilities). Use the chosen host port if it differs from 18080.
 
-Each workspace has its own inventory, cache and chart groups. Identical compiled styles and symbol images are shared globally. Lowercase inland classes use an `i_` prefix to preserve distinct classes in SQLite. The inventory records edition, applied updates, scale and classes per cell. Under `$enc_dir`, inspect `cache/warm-report.json` for conversions, `edge-report.log` for native edges, and `portrayal-day/publication.json` for plotted classes and portrayal gaps.
+Each workspace has its own inventory, cache and chart groups. The plugin installs the [global style library](shared-styles.md) at startup. Each publication selects the installed styles for its chart classes. Lowercase inland classes use an `i_` prefix to preserve distinct classes in SQLite. The inventory records edition, applied updates, scale and classes per cell. Under `$enc_dir`, inspect `cache/warm-report.json` for conversions, `edge-report.log` for native edges, and `portrayal-day/publication.json` for plotted classes and portrayal gaps.
 
 ## Choose a provider
 

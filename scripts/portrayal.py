@@ -156,6 +156,9 @@ class Compiler:
         pivot = bitmap.find('pivot')
         px, py = int(pivot.get('x')), int(pivot.get('y'))
         from PIL import Image
+        if (px,py) == (-2147483648,-2147483648):
+            self.issues.add('Unspecified bitmap pivot; centred symbol: '+name)
+            px,py = w//2,h//2
         rw, rh = max(abs(px), abs(w-px)), max(abs(py), abs(h-py))
         canvas = Image.new('RGBA', (max(1, 2*rw), max(1, 2*rh)))
         canvas.alpha_composite(self.atlas.crop((x, y, x+w, y+h)), (rw-px, rh-py))
@@ -199,10 +202,16 @@ class Compiler:
             return normal+[low]
         if command == 'DEPARE01':
             if geom != 'Area': return [(None,[self.line('DEPCN')])]
-            bounds = [(-1e9,0,'DEPIT'),(0,self.shallow,'DEPVS'),(self.shallow,self.safety,'DEPMS'),(self.safety,self.deep,'DEPMD'),(self.deep,1e9,'DEPDW')]
+            def threshold(name, default):
+                return prop(name) if name in fields else lit(default)
+            shallow = threshold('_enc_shallow_depth', self.shallow)
+            safety = threshold('_enc_safety_depth', self.safety)
+            deep = threshold('_enc_deep_depth', self.deep)
+            bounds = [(lit(-1e9),lit(0),'DEPIT'),(lit(0),shallow,'DEPVS'),
+                      (shallow,safety,'DEPMS'),(safety,deep,'DEPMD'),(deep,lit(1e9),'DEPDW')]
             result = [(null('DRVAL1'),[self.fill('DEPMD' if cls=='DRGARE' else 'NODTA')])]
             for low, high, color in bounds:
-                result.append((both(cmp('GreaterThanOrEqualTo',prop('DRVAL1'),lit(low)),cmp('LessThan',prop('DRVAL1'),lit(high))),[self.fill(color)]))
+                result.append((both(cmp('GreaterThanOrEqualTo',prop('DRVAL1'),low),cmp('LessThan',prop('DRVAL1'),high)),[self.fill(color)]))
             # DEPARE01 corrects DRVAL2 <= DRVAL1 to DRVAL1 + .01; for valid depth
             # intervals these exclusive lower-bound bands give the same colour.
             if cls=='DRGARE':
@@ -214,7 +223,7 @@ class Compiler:
             return [(f,quality_lines([self.line('DEPSC',2)],self.line('DEPSC',2,'DASH'))),
                     (either(null(field),negate(f)),quality_lines([self.line('DEPCN',1)],self.line('DEPCN',1,'DASH')))]
         if command == 'SOUNDG02':
-            return [(None,[self.native('sounding',fields,depth='DEPTH',safety=self.safety,
+            return [(None,[self.native('sounding',fields,depth='DEPTH',safety=('_enc_safety_depth' if '_enc_safety_depth' in fields else self.safety),
                 tecsou='TECSOU',quasou='QUASOU',quapos=quality_field,status='STATUS')])]
         if command.startswith('LIGHTS'):
             graphic=self.native('light',fields,colour='COLOUR',catlit='CATLIT',sector1='SECTR1',sector2='SECTR2',
@@ -224,7 +233,7 @@ class Compiler:
             self.issues.add('Lights: co-located flare offsets and compound light groups remain approximate')
             return [(None,[graphic,self.text(label,placement=(0,1,2,-1))])]
         if command.startswith('WRECKS') and geom=='Point':
-            graphic=self.native('wreck',fields,depth='VALSOU',safety=self.safety,category='CATWRK',water='WATLEV',
+            graphic=self.native('wreck',fields,depth='VALSOU',safety=('_enc_safety_depth' if '_enc_safety_depth' in fields else self.safety),category='CATWRK',water='WATLEV',
                 tecsou='TECSOU',quasou='QUASOU',quapos=quality_field,status='STATUS')
             self.issues.add('WRECKS02: attribute-based symbols/depth; surrounding-depth isolated-danger promotion incomplete')
             return [(negate(null('VALSOU')),[graphic,self.text(lit('Wk'),placement=(0,0,2,0))]),(null('VALSOU'),[graphic])]
@@ -298,6 +307,9 @@ class Compiler:
                 hjust,vjust,_,chars,xoff,yoff,color=args[offset:offset+7]
                 body=int(chars[3:]) if len(chars)>3 else 10
                 size=round((10+int(min(body,20)/20*4))*96/72,2)
+                if '=' in hjust or '=' in vjust:
+                    self.issues.add('Attribute-driven label alignment uses lookup defaults')
+                    hjust,vjust = hjust.split('=')[-1],vjust.split('=')[-1]
                 placement=({1:.5,2:1,3:0}.get(int(hjust),0),{1:0,2:.5,3:1}.get(int(vjust),0),float(xoff),float(yoff))
                 symbols=[self.text(label,color,size,placement,'bold' if len(chars)>1 and int(chars[1])>5 else 'normal')]
                 self.issues.add('Text: native label collision/area placement differs from OpenCPN; font normalized at 96 dpi')
@@ -357,7 +369,15 @@ class Compiler:
         ET.ElementTree(doc).write(self.out/f'{name}.sld',encoding='utf-8',xml_declaration=True)
 
 
-def generate(gpkg, out, palette='day', shallow=2, safety=5, deep=10):
+def select_styles(library, palette, counts):
+    entries = library['palettes'][palette]
+    layers = {cls:{'style':name,'count':counts[cls]} for cls,name in entries['layers'].items() if counts.get(cls,0)>0}
+    return {'layers':layers,'stack':[row for row in entries['stack'] if row['class'] in layers],
+            'unportrayed_classes':{cls:n for cls,n in counts.items() if n and cls not in layers and not cls.startswith('M_')},
+            'limitations':library['limitations'][palette],'library_revision':library['revision']}
+
+
+def generate(gpkg, out, palette='day', shallow=2, safety=5, deep=10, library=None):
     from osgeo import ogr
     ogr.UseExceptions()
     dataset=ogr.Open(str(gpkg))
@@ -367,6 +387,14 @@ def generate(gpkg, out, palette='day', shallow=2, safety=5, deep=10):
         metadata=dsid.GetNextFeature()
         if metadata is None or metadata.GetField('DSPM_DUNI') != 1:
             raise ValueError('Portrayal currently requires metre depth units (DSPM_DUNI=1)')
+    if library is not None:
+        coverage = dataset.GetLayerByName('M_COVR')
+        if coverage is None or not coverage.GetFeatureCount():
+            raise ValueError('ENC has no coverage geometry')
+        x1,x2,y1,y2 = coverage.GetExtent()
+        counts = {layer.GetName():layer.GetFeatureCount() for layer in dataset if layer.GetName()!='DSID'}
+        return {**select_styles(library,palette,counts),'palette':palette,'bbox':[x1,y1,x2,y2],
+                'shallow':shallow,'safety_depth':safety,'deep':deep}
     contours=[]
     layer=dataset.GetLayerByName('DEPCNT')
     if layer:
@@ -401,7 +429,7 @@ def generate(gpkg, out, palette='day', shallow=2, safety=5, deep=10):
     return manifest
 
 
-def generate_catalogue(index, out, palette='day', shallow=2, safety=5, deep=10):
+def generate_catalogue(index, out, palette='day', shallow=2, safety=5, deep=10, library=None):
     import sqlite3
     from osgeo import ogr
     with sqlite3.connect(index) as db:
@@ -421,6 +449,9 @@ def generate_catalogue(index, out, palette='day', shallow=2, safety=5, deep=10):
                 point=geom.PointOnSurface()
                 x,y=point.GetX(),point.GetY()
                 preview=[x-.004,y-.003,x+.004,y+.003]
+    if library is not None:
+        return {**select_styles(library,palette,classes),'palette':palette,'active_cells':active,
+                'shallow':shallow,'safety_depth':safety,'deep':deep,'bbox':bounds,'preview_bbox':preview}
     compiler=Compiler(ROOT/'portrayal/upstream',out,palette,shallow,safety,deep)
     layers={};entries=[]
     for cls,fields in sorted(schemas.items()):

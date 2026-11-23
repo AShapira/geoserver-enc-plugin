@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Run inside Kartoza's container, with optional Pillow installed and
-# GEOSERVER_PASSWORD set to the REST administrator password.
+# Run inside Kartoza's container, with GEOSERVER_PASSWORD set to the REST administrator password.
 set -euo pipefail
 data_dir=${GEOSERVER_DATA_DIR:-/opt/geoserver/data_dir}
 command=(python3 /opt/enc/scripts/publish.py

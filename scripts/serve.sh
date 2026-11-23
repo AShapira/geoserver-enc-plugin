@@ -4,17 +4,17 @@ set -euo pipefail
 source "$(dirname -- "${BASH_SOURCE[0]}")/env.sh"
 export GEOSERVER_HOME="$ENC_ROOT/.runtime/geoserver"
 export GEOSERVER_DATA_DIR="$GEOSERVER_HOME/data_dir"
-if [[ ! -f "$ENC_ROOT/target/gs-s57-0.3.0.jar" ]]; then
+if [[ ! -f "$ENC_ROOT/target/gs-s57-0.4.0.jar" ]]; then
   echo 'Build first: scripts/build.sh' >&2; exit 1
 fi
 for installed in "$GEOSERVER_HOME"/webapps/geoserver/WEB-INF/lib/gs-s57*.jar; do
   [[ -f "$installed" ]] || continue
-  if [[ $(basename "$installed") != gs-s57-0.3.0.jar ]]; then
-    echo "Older S-57 installation found: $installed. Stop the server and remove it before installing 0.3.0." >&2
+  if [[ $(basename "$installed") != gs-s57-0.4.0.jar ]]; then
+    echo "Older S-57 installation found: $installed. Stop the server and remove it before installing 0.4.0." >&2
     exit 1
   fi
 done
-cp "$ENC_ROOT/target/gs-s57-0.3.0.jar" "$GEOSERVER_HOME/webapps/geoserver/WEB-INF/lib/"
+cp "$ENC_ROOT/target/gs-s57-0.4.0.jar" "$GEOSERVER_HOME/webapps/geoserver/WEB-INF/lib/"
 export JETTY_OPTS="jetty.http.host=127.0.0.1 jetty.http.port=${ENC_PORT:-18080}"
 export JAVA_OPTS="-Xms256m -Xmx1536m ${JAVA_OPTS:-}"
 exec bash "$GEOSERVER_HOME/bin/startup.sh"

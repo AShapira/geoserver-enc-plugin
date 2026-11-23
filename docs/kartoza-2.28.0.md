@@ -68,7 +68,7 @@ compatibility with that other version.
 | Read S-57 at runtime | GDAL `ogr2ogr`, S57/GPKG/SQLite drivers, GDAL dictionaries and PROJ data | Yes; GDAL 3.8.4 tested |
 | Source/resource inputs | `src/main/java`, `src/main/resources`, and the pinned XML/PNG assets in `portrayal/upstream` | In the source checkout |
 | Prepare catalogues | Python 3 and GDAL Python bindings, local ENC source data | Python/GDAL supplied; chart data must be provided |
-| Generate/publish full chart styles | Python 3, GDAL Python bindings, Pillow, bundled portrayal assets, REST credentials, writable server data directory | All software except Pillow |
+| Publish chart groups with shared styles | Python 3, GDAL Python bindings, bundled style library, REST credentials and writable chart cache | Yes |
 | Java test suite | Test sources, JUnit Platform Console Standalone 1.11.4, real ENC fixtures for native tests | JUnit and fixtures must be supplied separately |
 | Python/image service tests | Python test sources, Pillow, ENC fixtures, running GeoServer | Pillow and fixtures must be supplied separately |
 
@@ -81,7 +81,7 @@ target server. Do not copy the Maven dependency tree into `WEB-INF/lib`.
 Full style generation additionally needs Pillow; testing also needs test tools
 and real chart data. These are separate from compiling the extension.
 
-For an offline publisher, prepare a Pillow wheel matching the container's Python
+For optional image tests, prepare a Pillow wheel matching the container's Python
 version and architecture. The tested base uses Python 3.12; validation used the
 Pillow 11.3.0 CPython 3.12 Linux x86_64 wheel. After copying it into the container,
 it can be extracted without installing `pip`:
@@ -121,12 +121,10 @@ Open `http://localhost:18081/geoserver/`. Under **Stores → Add new Store**,
 choose **S-57 ENC (GDAL)**. Set `file=/enc/YOUR_CELL.000`,
 `cache=/opt/geoserver/data_dir/enc-cache` and `ogr2ogr=/usr/bin/ogr2ogr`.
 For a prepared catalogue, set `catalogue=/enc/catalogue.sqlite` instead of `file`.
-Publish object classes and use ordinary GeoServer styles, or install Pillow and
-use the bundled full-chart publisher:
+Publish individual classes using the installed global ENC styles, or assemble a chart group with the bundled publisher:
 
 ```bash
 docker exec \
-  -e PYTHONPATH=/opt/enc/python \
   -e GEOSERVER_PASSWORD \
   geoserver-s57 bash /opt/enc/publish.sh \
   /enc/YOUR_CELL.000 --workspace noaa --palette day

@@ -24,7 +24,7 @@ final class CatalogueDataStore extends ContentDataStore {
     private final Path cache;
     private final String executable;
     private final int timeout, poolSize;
-    private final double safety;
+    private final PortrayalSchema.Depths depths;
     private final Map<String,SimpleFeatureType> schemas=new TreeMap<>();
     private final LinkedHashMap<String,Lease> pool=new LinkedHashMap<>(16,.75f,true);
     private boolean closed;
@@ -34,9 +34,9 @@ final class CatalogueDataStore extends ContentDataStore {
         Lease(DataStore store) { this.store=store; }
     }
 
-    CatalogueDataStore(Path catalogue,Path cache,String executable,int timeout,int poolSize,double safety,String namespace) throws IOException {
+    CatalogueDataStore(Path catalogue,Path cache,String executable,int timeout,int poolSize,PortrayalSchema.Depths depths,String namespace) throws IOException {
         this.index=new CatalogueIndex(catalogue);this.cache=cache;this.executable=executable;
-        this.timeout=timeout;this.poolSize=poolSize;this.safety=safety;
+        this.timeout=timeout;this.poolSize=poolSize;this.depths=depths;
         setNamespaceURI(namespace);
         for(var entry:index.fields.entrySet()) {
             if(entry.getKey().equals("C_ASSO") || entry.getKey().equals("C_AGGR")) continue;
@@ -50,6 +50,7 @@ final class CatalogueDataStore extends ContentDataStore {
             builder.add("_enc_cell",String.class);builder.add("_enc_cscl",Integer.class);builder.add("_enc_safety_contour",Double.class);
             if(entry.getKey().equals("TOPMAR")) builder.add("_enc_floating",Integer.class);
             S57DataStore.addPortrayalFields(builder);
+            PortrayalSchema.extend(entry.getKey(),builder);
             schemas.put(entry.getKey(),builder.buildFeatureType());
         }
     }
@@ -64,7 +65,7 @@ final class CatalogueDataStore extends ContentDataStore {
             // Small pools per cell; total number of retained cell stores is bounded.
             params.put("max connections",2);params.put("min connections",0);
             Path metadata=EdgeCache.materialize(cell.source(),snapshot,executable,timeout);
-            lease=new Lease(new S57DataStore(new GeoPkgDataStoreFactory().createDataStore(params),metadata,safety));pool.put(cell.name(),lease);
+            lease=new Lease(new S57DataStore(new GeoPkgDataStoreFactory().createDataStore(params),metadata,depths));pool.put(cell.name(),lease);
         }
         lease.readers++;evict();return lease;
     }
@@ -152,7 +153,7 @@ final class CatalogueDataStore extends ContentDataStore {
                             if(schemas.get(type).getDescriptor(name)!=null && !name.equals(original.getFeatureType().getGeometryDescriptor().getLocalName())) builder.set(name,attribute.getValue());
                         }
                         builder.set("_enc_cell",selection.cell().name());builder.set("_enc_cscl",selection.cell().scale());
-                        double contour=selection.cell().safetyContour(safety);
+                        double contour=selection.cell().safetyContour(depths.safety());
                         builder.set("_enc_safety_contour",Double.isNaN(contour)?null:contour);
                         if(selection.visible()!=null) {
                             var clipped=new IdentityHashMap<Geometry,Geometry>();

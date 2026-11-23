@@ -4,10 +4,10 @@ import hashlib
 from pathlib import Path
 import zipfile
 ROOT=Path(__file__).resolve().parents[1]
-jar=ROOT/'target/gs-s57-0.3.0.jar'
+jar=ROOT/'target/gs-s57-0.4.0.jar'
 if not jar.is_file(): raise SystemExit('Run scripts/build.sh first')
 dest=ROOT/'dist';dest.mkdir(exist_ok=True)
-archive=dest/'gs-s57-0.3.0-geoserver-3.0.2.zip'
+archive=dest/'gs-s57-0.4.0-geoserver-3.0.2.zip'
 with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:
     z.write(jar,'lib/'+jar.name)
     for name in ['enc','README.md','LICENSE','NOTICE.md','pom.xml','environment-linux-64.lock','.containerignore','.dockerignore']:

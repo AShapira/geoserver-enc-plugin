@@ -1,6 +1,6 @@
 # GeoServer S-57 ENC plugin
 
-A read-only GeoServer S-57 plugin backed by GDAL's S57 reader. Release **0.3.0** adds multi-source ENC deployment with shared chart styles and includes a source-only [air-gap installation kit](airgap/README.md) maintained on `main`. Tested Java targets are **GeoServer 2.28.0 / GeoTools 34.0** and **GeoServer 3.0.2 / GeoTools 35.2**; other versions require rebuilding and validation. Each catalogue store serves a complete S-57 exchange set through WMS and GeoWebCache WMTS. It indexes actual chart coverage, selects cells by scale and clips overlapping coverage. Adjacent updates are applied to immutable, indexed GeoPackage snapshots. Single `.000` stores remain supported.
+A read-only GeoServer S-57 plugin backed by GDAL's S57 reader. Release **0.4.0** installs a shared ENC style library before any charts are loaded and includes a source-only [air-gap installation kit](airgap/README.md) maintained on `main`. Tested Java targets are **GeoServer 2.28.0 / GeoTools 34.0** and **GeoServer 3.0.2 / GeoTools 35.2**; other versions require rebuilding and validation. Each catalogue store serves a complete S-57 exchange set through WMS and GeoWebCache WMTS. It indexes actual chart coverage, selects cells by scale and clips overlapping coverage. Adjacent updates are applied to immutable, indexed GeoPackage snapshots. Single `.000` stores remain supported.
 
 The supplied portrayal compiler uses pinned OpenCPN S-52 colours, raster symbols, lookup tables, and HPGL patterns/lines. It supplies depth bands, selected safety contours, compound sounding glyphs, light sectors/characteristics, topmarks, formatted labels, scale filtering, and day/dusk/night presets. Versioned [native edge metadata](docs/edge-metadata.md) handles conditional shared-edge priorities, masks, spatial-quality segments and precomputed lookup selection. **Portrayal is experimental and incomplete; this is not an ECDIS implementation or a claim of S-52 conformance.** See [portrayal coverage](docs/portrayal.md) and the [latest OpenCPN comparison and CPU/RAM/disk measurements](docs/portrayal-2026-11-17.md).
 
@@ -99,8 +99,8 @@ The bootstrap preserves an existing demo data directory. Stop the foreground ser
 For a **lean, source-only offline image build**, use the [air-gap build kit](airgap/README.md).
 It defaults to Kartoza GeoServer **2.28.0**, accepts other prepared base images and library paths,
 and contains only production sources, required resources, build configuration and notices.
-Run `python3 scripts/package_airgap.py` from the v0.3.0 checkout to create
-`dist/gs-s57-0.3.0-airgap-build.zip` and its SHA-256 checksum.
+Run `python3 scripts/package_airgap.py` from the v0.4.0 checkout to create
+`dist/gs-s57-0.4.0-airgap-build.zip` and its SHA-256 checksum.
 The kit requires an existing image with JDK 17/21, matching GeoServer/GeoTools GeoPackage
 libraries, and GDAL with S57/GPKG/SQLite drivers and its native libraries/data.
 Its [manual](airgap/README.md) lists all build/runtime dependencies, optional tooling,
@@ -108,7 +108,7 @@ and the exact versions tested. The [full Kartoza guide](docs/kartoza-2.28.0.md) 
 covers the optional chart publisher and the compatibility validation.
 
 1. Use a tested target with Java 17 or 21, and GDAL 3.2+ with S57, GPKG and SQLite drivers (tested with 3.8.4 in containers and 3.11.5 in development). Ensure GDAL's data dictionaries and PROJ data are available to the server process.
-2. Build with `mvn package` for GeoServer 3.0.2, or `mvn -Pgeoserver-2.28 package` for 2.28.0. Stop GeoServer, remove an older S-57 plugin JAR if upgrading, copy **only** `target/gs-s57-0.3.0.jar` into `WEB-INF/lib`, then restart. The tested binaries already contain `gt-geopkg` and its dependencies; do not replace GeoTools JARs. If your custom distribution omits them, install its matching GeoPackage support first.
+2. Build with `mvn package` for GeoServer 3.0.2, or `mvn -Pgeoserver-2.28 package` for 2.28.0. Stop GeoServer, remove an older S-57 plugin JAR if upgrading, copy **only** `target/gs-s57-0.4.0.jar` into `WEB-INF/lib`, then restart. The tested binaries already contain `gt-geopkg` and its dependencies; do not replace GeoTools JARs. If your custom distribution omits them, install its matching GeoPackage support first. The first startup installs the [shared ENC style library](docs/shared-styles.md), including all three palettes, before any chart store exists.
 3. Add a store of type **S-57 ENC (GDAL)**, supplying:
 
 | Parameter | Value |
@@ -121,9 +121,9 @@ covers the optional chart publisher and the compatibility validation.
 | `timeout` | Import timeout in seconds; default 300 |
 | `namespace` | Optional feature namespace URI |
 | `cellPoolSize` | Catalogue JDBC store pool target; default 16, demo 32; active readers remain leased |
-| `safetyDepth` | Safety depth in metres, in cell and catalogue modes; default 5; must match the generated portrayal setting |
+| `shallowDepth`, `safetyDepth`, `deepDepth` | Store thresholds in metres for all three palettes. Defaults are 2, 5, and 10 respectively. |
 
-4. Publish object classes in the GeoServer UI, or use `scripts/publish.py` to generate and install the complete ordered chart group. The publisher requires GDAL Python bindings, Pillow, REST administrator credentials, and filesystem access to the server's data directory for symbol assets. It manages one catalogue or single-cell store per workspace. To prepare a catalogue, download `ENCProdCat.xml` and `All_ENCs.zip` from NOAA, then run:
+4. Publish object classes in the GeoServer UI, or use `scripts/publish.py` to generate and install the complete ordered chart group. The publisher requires GDAL Python bindings, REST administrator credentials, and access to the chart inventory or snapshot. It manages one catalogue or single-cell store per workspace. To prepare a catalogue, download `ENCProdCat.xml` and `All_ENCs.zip` from NOAA, then run:
 
 ```bash
 python scripts/catalogue.py --catalogue /path/ENCProdCat.xml \
@@ -144,7 +144,7 @@ python scripts/publish.py /absolute/path/US5NY1BH.000 \
   --cache /absolute/path/to/cache --ogr2ogr /absolute/path/to/ogr2ogr
 ```
 
-Set `--palette dusk` or `--palette night`, `--styles portrayal/generated-night`, and `--update` to add another preset to an existing plugin-owned workspace. The groups `chart_day`, `chart_dusk`, and `chart_night` have separate tile caches. `--shallow 2 --safety 5 --deep 10` sets fixed metre thresholds; the first available contour at or deeper than the safety setting is emphasized. Group styles are explicit, so changing an individual layer's default style does not alter other presets.
+Set `--palette dusk` or `--palette night`, `--styles portrayal/generated-night`, and `--update` to add another preset to an existing plugin-owned workspace. The groups `chart_day`, `chart_dusk`, and `chart_night` have separate tile caches. `--shallow 2 --safety 5 --deep 10` sets the store’s metre thresholds for every palette; the first available contour at or deeper than the safety setting is emphasized. Group styles are explicit, so changing an individual layer's default style does not alter other presets.
 
 The source path, GDAL executable and cache directory are server-side paths. These store settings require trusted GeoServer administrators. Windows deployments need a compatible native GDAL executable; they have not been tested here.
 

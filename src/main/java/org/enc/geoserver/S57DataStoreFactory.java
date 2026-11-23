@@ -14,6 +14,8 @@ public final class S57DataStoreFactory implements DataStoreFactorySpi {
     public static final Param CATALOGUE = new Param("catalogue", String.class, "Prepared S-57 catalogue.sqlite (active cells)", false);
     public static final Param POOL = new Param("cellPoolSize", Integer.class, "Maximum retained cell stores", false, 16);
     public static final Param SAFETY = new Param("safetyDepth", Double.class, "Safety depth in metres", false, 5.0);
+    public static final Param SHALLOW = new Param("shallowDepth", Double.class, "Shallow depth in metres", false, 2.0);
+    public static final Param DEEP = new Param("deepDepth", Double.class, "Deep depth in metres", false, 10.0);
     public static final Param CACHE = new Param("cache", String.class, "Writable ENC snapshot cache directory", true);
     public static final Param GDAL = new Param("ogr2ogr", String.class, "GDAL ogr2ogr executable", true, "ogr2ogr");
     public static final Param TIMEOUT = new Param("timeout", Integer.class, "Import timeout in seconds", false, 300);
@@ -21,7 +23,7 @@ public final class S57DataStoreFactory implements DataStoreFactorySpi {
 
     @Override public String getDisplayName() { return "S-57 ENC (GDAL)"; }
     @Override public String getDescription() { return "Read-only S-57 cells or full catalogues via GDAL, with scale-aware coverage quilting"; }
-    @Override public Param[] getParametersInfo() { return new Param[]{TYPE, FILE, CATALOGUE, CACHE, GDAL, TIMEOUT, POOL, SAFETY, NAMESPACE}; }
+    @Override public Param[] getParametersInfo() { return new Param[]{TYPE, FILE, CATALOGUE, CACHE, GDAL, TIMEOUT, POOL, SHALLOW, SAFETY, DEEP, NAMESPACE}; }
     @Override public boolean canProcess(Map<String, ?> params) { return "s57".equals(params.get("dbtype")); }
     @Override public boolean isAvailable() { return true; }
     @Override public Map<java.awt.RenderingHints.Key, ?> getImplementationHints() { return Collections.emptyMap(); }
@@ -42,12 +44,15 @@ public final class S57DataStoreFactory implements DataStoreFactorySpi {
         if (single == national) throw new IOException("Specify exactly one of file or catalogue");
         Double safety=(Double)SAFETY.lookUp(params);if(safety==null)safety=5.0;
         if(!Double.isFinite(safety)||safety<0)throw new IOException("Invalid safety depth");
+        // A store created before shallow/deep settings existed may have any nonnegative safety depth.
+        var depths = new PortrayalSchema.Depths(params.containsKey("shallowDepth") ? (Double) SHALLOW.lookUp(params) : Math.min(2,safety),
+                safety, params.containsKey("deepDepth") ? (Double) DEEP.lookUp(params) : Math.max(10,safety));
         if (national) {
             Integer size = (Integer) POOL.lookUp(params);
             if (size == null) size = 16;
             if (safety == null) safety = 5.0;
             if (size < 1 || size > 256 || !Double.isFinite(safety) || safety < 0) throw new IOException("Invalid catalogue pool size or safety depth");
-            return new CatalogueDataStore(Path.of(catalogue), Path.of(cache).toAbsolutePath(), executable, timeout, size, safety, namespace);
+            return new CatalogueDataStore(Path.of(catalogue), Path.of(cache).toAbsolutePath(), executable, timeout, size, depths, namespace);
         }
         Path snapshot = GdalCache.materialize(Path.of(file), Path.of(cache).toAbsolutePath(), executable, timeout);
         Map<String, Serializable> gpkg = new HashMap<>();
@@ -55,7 +60,7 @@ public final class S57DataStoreFactory implements DataStoreFactorySpi {
         if (namespace != null) gpkg.put("namespace", namespace);
         Path metadata=EdgeCache.materialize(Path.of(file),snapshot,executable,timeout);
         DataStore delegate = new GeoPkgDataStoreFactory().createDataStore(gpkg);
-        S57DataStore store = new S57DataStore(delegate,metadata,safety);
+        S57DataStore store = new S57DataStore(delegate,metadata,depths);
         if (namespace != null) store.setNamespaceURI(namespace);
         return store;
     }

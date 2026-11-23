@@ -1,13 +1,13 @@
 # S-57 extension: lean offline image build
 
-Prepared by Codex. Release **0.3.0**, 2026-11-22.
+Prepared by Codex. Release **0.4.0**, 2026-11-23.
 
 This source-only kit adds the S-57 extension to an existing GeoServer image.
 The default target is **kartoza/geoserver:2.28.0 / GeoTools 34.0**. Its Dockerfile
 compiles against the libraries inside your chosen base image, then adds one JAR.
 The final image inherits the base's user, entrypoint, command and environment.
 This kit is maintained on `main`; no vendor-specific source branch is needed.
-The release archive is `gs-s57-0.3.0-airgap-build.zip`.
+The release archive is `gs-s57-0.4.0-airgap-build.zip`.
 
 Choose this kit when your deliverable is a plugin-enabled server image. For the complete multi-source chart service, use `docs/airgap-deployment.md` from the full checkout containing `enc`. That procedure carries the finished server image, host launcher and exchange directories across the gap. The lean ZIP contains the Java build inputs and this manual.
 
@@ -26,11 +26,11 @@ The base image must contain:
   dictionaries and PROJ data available to the runtime user.
 - A POSIX shell and the ordinary `chmod` utility used during the build.
 - A clean extension installation: no older `gs-s57*.jar` beside the new plugin.
-  A base already containing `gs-s57-0.3.0.jar` is supported; it is replaced.
+  A base already containing `gs-s57-0.4.0.jar` is supported; it is replaced.
 
 Kartoza 2.28.0 already supplies these dependencies. No host Java, Maven, Python,
 Pillow, JUnit, C compiler, package manager or network repository is required.
-Chart files are not needed to build the image; supply them when using the store.
+The JAR includes the compiled ENC style library. The first GeoServer startup installs all three palettes before any charts are supplied.
 
 If the base lacks a dependency, prepare and transfer a suitable base image
 beforehand. This package neither downloads dependencies nor adds a second toolchain.
@@ -53,7 +53,7 @@ Optional tools are separate from the build dependencies:
 | Regenerate this ZIP from the repository | Python 3 standard library; run `python3 scripts/package_airgap.py` |
 | Maven build instead of the Dockerfile | JDK 17/21, Maven, and cached dependency JARs/POMs/build plugins or an internal repository |
 | Prepare a catalogue | Full project's Python scripts, Python 3, GDAL Python bindings and local ENC exchange sets |
-| Generate full nautical chart styles | Full project's publisher, Python 3, GDAL bindings, Pillow, REST credentials and writable style assets |
+| Publish a chart group using the installed styles | Full project's publisher, Python 3, GDAL bindings, local chart inventory or snapshot, and REST credentials |
 | Run the Java tests | Test sources, JUnit Platform Console Standalone 1.11.4 and native ENC fixtures; full-inventory test additionally needs a prepared catalogue |
 | Run Python/image smoke tests | Test scripts and Pillow, with GDAL Python bindings for portrayal generation |
 
@@ -62,12 +62,12 @@ GDAL raster extension or GDAL Java/JNI bindings.
 
 ## Stage the offline inputs
 
-On a **connected machine**, run `python3 scripts/package_airgap.py` in the full v0.3.0 checkout to create the kit ZIP and its adjacent `.sha256` in `dist/`. From the directory containing that ZIP, package the matching base image for transfer. The example uses the Kartoza default. The target needs a Linux engine compatible with the base image’s CPU architecture.
+On a **connected machine**, run `python3 scripts/package_airgap.py` in the full v0.4.0 checkout to create the kit ZIP and its adjacent `.sha256` in `dist/`. From the directory containing that ZIP, package the matching base image for transfer. The example uses the Kartoza default. The target needs a Linux engine compatible with the base image’s CPU architecture.
 
 ```bash
 set -euo pipefail
 export CONTAINER_ENGINE="${CONTAINER_ENGINE:-podman}"
-kit=gs-s57-0.3.0-airgap-build.zip
+kit=gs-s57-0.4.0-airgap-build.zip
 base=docker.io/kartoza/geoserver:2.28.0
 sha256sum -c "$kit.sha256"
 "$CONTAINER_ENGINE" image inspect "$base" >/dev/null 2>&1 || "$CONTAINER_ENGINE" pull "$base"
@@ -88,9 +88,9 @@ sha256sum -c SHA256SUMS
 "$CONTAINER_ENGINE" image inspect docker.io/kartoza/geoserver:2.28.0 --format '{{.Os}}/{{.Architecture}} {{.Id}}'
 kit_build=$(mktemp -d "${TMPDIR:-/tmp}/s57-build.XXXXXXXX")
 if command -v unzip >/dev/null; then
-  unzip -q gs-s57-0.3.0-airgap-build.zip -d "$kit_build"
+  unzip -q gs-s57-0.4.0-airgap-build.zip -d "$kit_build"
 else
-  python3 -m zipfile -e gs-s57-0.3.0-airgap-build.zip "$kit_build"
+  python3 -m zipfile -e gs-s57-0.4.0-airgap-build.zip "$kit_build"
 fi
 cd "$kit_build"
 sha256sum -c SHA256SUMS
@@ -252,10 +252,9 @@ PY
 There is **no prebuilt JAR**, Maven project, test suite, Python environment,
 publisher, catalogue-preparation tool, demo, viewer, chart data or performance
 evidence. Those are not required to build or install the extension. This kit
-does not automatically create a styled nautical chart group. Use GeoServer's
-ordinary styles or bring pre-generated SLDs and their referenced assets separately.
-The full project's chart-style publisher remains a separate workflow and needs
-Python/GDAL bindings plus Pillow. Portrayal remains experimental; no ECDIS or
+installs the shared global styles and graphics automatically. Select an installed
+style for a layer, or use the full project's Python publisher with GDAL bindings
+to assemble the ordered chart groups. Portrayal remains experimental; no ECDIS or
 complete S-52 conformance is claimed.
 
 ## Checks performed for this kit

@@ -22,8 +22,8 @@ RUN set -eu; \
     test "$#" -eq 1 && test -f "$1" || { echo 'Base image must contain matching GeoTools GeoPackage support.' >&2; exit 1; }; \
     javac --release 17 -cp "${GEOSERVER_LIB_DIR}/*:${SERVLET_LIB_DIR}/*" \
       -d /classes /src/org/enc/geoserver/*.java; \
-    jar --create --file /tmp/gs-s57-0.3.0.jar -C /classes .; \
-    chmod 644 /tmp/gs-s57-0.3.0.jar
+    jar --create --file /tmp/gs-s57-0.4.0.jar -C /classes .; \
+    chmod 644 /tmp/gs-s57-0.4.0.jar
 
 # This stage inherits the original user, entrypoint, command and environment.
 FROM ${GEOSERVER_IMAGE} AS runtime
@@ -33,7 +33,7 @@ ARG OGRINFO
 RUN set -eu; \
     for installed in "${GEOSERVER_LIB_DIR}"/gs-s57*.jar; do \
       test -f "$installed" || continue; \
-      test "$installed" = "${GEOSERVER_LIB_DIR}/gs-s57-0.3.0.jar" \
+      test "$installed" = "${GEOSERVER_LIB_DIR}/gs-s57-0.4.0.jar" \
         || { echo 'Base contains another S-57 plugin JAR; use a prepared base without an older installation.' >&2; exit 1; }; \
     done; \
     command -v "$OGR2OGR" >/dev/null && command -v "$OGRINFO" >/dev/null \
@@ -42,4 +42,4 @@ RUN set -eu; \
     "$OGRINFO" --format S57 >/dev/null; \
     "$OGRINFO" --format GPKG >/dev/null; \
     "$OGRINFO" --format SQLite >/dev/null
-COPY --from=plugin-build /tmp/gs-s57-0.3.0.jar ${GEOSERVER_LIB_DIR}/gs-s57-0.3.0.jar
+COPY --from=plugin-build /tmp/gs-s57-0.4.0.jar ${GEOSERVER_LIB_DIR}/gs-s57-0.4.0.jar
