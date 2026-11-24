@@ -6,3 +6,11 @@
 !portrayal/
 !portrayal/upstream/
 !portrayal/upstream/**
+!viewer/
+!viewer/enc.html
+!container/
+!container/Dockerfile
+!container/kartoza.Dockerfile
+!container/publish-kartoza.sh
+!scripts/
+!scripts/*.py

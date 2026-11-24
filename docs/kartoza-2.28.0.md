@@ -4,16 +4,12 @@ Prepared by Codex. Validation date: 2026-11-17.
 
 To deploy the multi-source viewer with named providers, shared styles, and verified WMS/WMTS groups, use the [full offline transfer](airgap-deployment.md) or the [online publishing guide](publishing-guide.md). This manual covers the Kartoza 2.28.0 image layout, its single-cell or prepared-catalogue store and its optional publisher.
 
-For a smaller source-only distribution, use the [lean air-gap build kit](../airgap/README.md)
-and `python3 scripts/package_airgap.py`. Its configurable Dockerfile adds only the plugin
-JAR to a prepared base image. The Python helpers described below belong to the full
-distribution and are intentionally absent from that lean kit.
+The deployment ZIP includes the Python helpers and two main build paths. Its root Dockerfile adds the plugin JAR to a prepared vendor image. The [plugin build manual](../airgap/README.md) describes its base image requirements.
 
 The S-57 plugin builds and runs with `docker.io/kartoza/geoserver:2.28.0`.
 Use `container/kartoza.Dockerfile` for this image. It compiles against the base
 image's actual libraries and does not install packages or download dependencies.
-The original `container/Dockerfile` remains the GeoServer 3.0.2 demo recipe and
-uses `apt-get`, so it requires network access or a separately supplied package repository.
+The full chart-service recipe in `container/Dockerfile` uses the official GeoServer 3.0.2 image. Its offline build uses the prepared service base described in the kit’s root README.
 
 ## Build with no network
 

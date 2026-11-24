@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create the source-only offline image-build kit from an explicit input allowlist."""
+"""Create the offline build and deployment kit from an explicit input allowlist."""
 import argparse
 import hashlib
 from pathlib import Path
@@ -22,10 +22,28 @@ def package(destination):
         'Dockerfile': ROOT / 'airgap/Dockerfile',
         '.dockerignore': ROOT / 'airgap/context.dockerignore',
         '.containerignore': ROOT / 'airgap/context.dockerignore',
-        'README.md': ROOT / 'airgap/README.md',
+        'README.md': ROOT / 'airgap/START-HERE.md',
         'LICENSE': ROOT / 'LICENSE',
         'NOTICE.md': ROOT / 'NOTICE.md',
     }
+    operators = (
+        'enc', 'viewer/enc.html', 'container/Dockerfile', 'airgap/README.md',
+        'container/kartoza.Dockerfile', 'container/publish-kartoza.sh', 'container/demo.sh',
+        'docs/airgap-deployment.md', 'docs/publishing-guide.md', 'docs/kartoza-2.28.0.md',
+        'docs/noaa-catalogue-maintenance.md', 'docs/enc-validation.json', 'docs/shared-styles.md',
+        'docs/portrayal.md', 'docs/portrayal-2026-11-17.md', 'docs/edge-metadata.md',
+        'docs/portrayal-comparison.md', 'docs/catalogue-validation.md', 'docs/decisions.md',
+    )
+    scripts = (
+        'providers', 'exchange', 'catalogue', 'deployment', 'inland_dictionary', 'ogr_inland',
+        'warm_catalogue', 'cache_key', 'publish', 'portrayal', 'hpgl', 'check_sources',
+        'catalogue_smoke', 'audit_edges', 'tune_cache',
+    )
+    for name in operators:
+        inputs[name] = ROOT / name
+    for script in scripts:
+        name = f'scripts/{script}.py'
+        inputs[name] = ROOT / name
     for directory in ('src/main', 'portrayal/upstream'):
         for path in sorted((ROOT / directory).rglob('*')):
             if path.is_file():
@@ -45,7 +63,8 @@ def package(destination):
             info = zipfile.ZipInfo(name, date_time=(2026, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
             info.create_system = 3
-            info.external_attr = 0o100644 << 16
+            mode = 0o100755 if name in {'enc', 'container/demo.sh', 'scripts/ogr_inland.py'} else 0o100644
+            info.external_attr = mode << 16
             archive.writestr(info, data)
     with zipfile.ZipFile(destination) as archive:
         assert archive.testzip() is None

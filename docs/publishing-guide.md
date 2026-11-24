@@ -7,7 +7,7 @@ Prepared by Codex.
 | You have a running multi-source GeoServer | Set the shell variables, check the server, then prepare and deploy an exchange. |
 | You are installing online | Follow the steps below in order, including the image build and first start. |
 | The target has no internet access | Start with the [two-machine air-gap procedure](airgap-deployment.md). It supplies the image, charts, host command and manuals. Resume here after import. |
-| You need only the extension JAR in an existing server image | Use the [source-only build kit](../airgap/README.md) or the [Kartoza 2.28.0 manual](kartoza-2.28.0.md). |
+| You need only the extension JAR in an existing server image | Use the [plugin build manual](../airgap/README.md) or the [Kartoza 2.28.0 manual](kartoza-2.28.0.md). |
 | You maintain the original NOAA XML/archive installation | Use the [NOAA maintenance procedure](noaa-catalogue-maintenance.md). A NOAA workspace created by `enc deploy` follows this guide. |
 
 ## Set the shell variables
@@ -38,7 +38,7 @@ export GEOSERVER_PASSWORD
 
 ## Build the full image online
 
-Skip this step for a running compatible server or a verified image loaded from the transfer bundle. On a connected host, run the build from the checkout root. The base image and OS packages must be available. The image architecture must match the target.
+Skip this step for a running compatible server or a verified image loaded from the transfer bundle. On a connected host, run the build from the checkout root or the extracted kit containing `enc`. The base image and OS packages must be available. The image architecture must match the target.
 
 ```bash
 build_options=()
@@ -168,7 +168,7 @@ echo "Verified deployment. Receipt: $enc_receipt"
 
 Success means the block exits zero and the receipt includes `results.json` for day, dusk and night. The check renders a nonblank WMS image and WMTS tile for each palette, checks that the palettes differ and confirms a repeated WMTS tile is a cache `HIT`. An agent can return the workspace, generation, cell count, viewer URL and receipt path. Retain the source exchange referenced by the receipt for rollback. If the stage needs fewer import processes, pass `--workers 2` to `enc deploy` (default 4, range 1–16).
 
-At the default host port, open the [viewer](http://127.0.0.1:18080/enc.html), choose **Source**, then try **Palette** and **Service**. Other GIS clients can discover `WORKSPACE:chart_day`, `chart_dusk` and `chart_night` through [WMS](http://127.0.0.1:18080/geoserver/wms?SERVICE=WMS&REQUEST=GetCapabilities) or [WMTS](http://127.0.0.1:18080/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetCapabilities). Use the chosen host port if it differs from 18080.
+At the default host port, open the [viewer](http://127.0.0.1:18080/enc.html), choose **Source**, then try **Palette** and **Service**. At zoom 10 or closer, **Search objects** finds chart features in the current map area by type and optional partial name. Other GIS clients can discover `WORKSPACE:chart_day`, `chart_dusk` and `chart_night` through [WMS](http://127.0.0.1:18080/geoserver/wms?SERVICE=WMS&REQUEST=GetCapabilities) or [WMTS](http://127.0.0.1:18080/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetCapabilities). Use the chosen host port if it differs from 18080.
 
 Each workspace has its own inventory, cache and chart groups. The plugin installs the [global style library](shared-styles.md) at startup. Each publication selects the installed styles for its chart classes. Lowercase inland classes use an `i_` prefix to preserve distinct classes in SQLite. The inventory records edition, applied updates, scale and classes per cell. Under `$enc_dir`, inspect `cache/warm-report.json` for conversions, `edge-report.log` for native edges, and `portrayal-day/publication.json` for plotted classes and portrayal gaps.
 

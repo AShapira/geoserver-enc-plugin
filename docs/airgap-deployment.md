@@ -4,12 +4,12 @@ Prepared by Codex.
 
 If you are reading `START-HERE.md` on received media, begin at [On the disconnected machine](#on-the-disconnected-machine).
 
-Use this procedure for the multi-source GeoServer viewer, named workspaces, shared chart styles, WMS and WMTS. The connected machine builds the full image and prepares the charts. The disconnected machine loads that image and publishes from a local directory. For adding only the Java extension to a vendor’s existing image, use the source-only kit and its included `README.md`.
+Use this procedure for the multi-source GeoServer viewer, named workspaces, shared chart styles, WMS and WMTS. The connected machine builds the full image and prepares the charts. The disconnected machine loads that image and publishes from a local directory. For a disconnected source build of the complete service, follow **Build the chart service offline** in the kit’s root README. For a plugin-only vendor image, use the [plugin build manual](../airgap/README.md).
 
 | Crosses the gap | Why the target needs it |
 | --- | --- |
 | Full GeoServer **image archive** | Supplies the plugin, GDAL, inland dictionary, Python publisher, fonts, styles compiler and viewer |
-| **Operator archive** from the matching checkout | Supplies the host `enc` launcher, its `scripts/providers.py` import, instructions and notices |
+| **Deployment kit ZIP** matching the image | Supplies the searchable viewer, host launcher, catalogue preparation and publication scripts, build recipes, manuals and notices |
 | **Exchange archive** | Contains the complete prepared directory, including its manifest, cells, numbered updates and auxiliary files |
 | **Transfer record and SHA-256 sums** | Identifies the image tag, exact image ID, OS/architecture and intended workspace, and checks the transferred files before use |
 
@@ -17,26 +17,31 @@ Both machines need Bash, Python 3.9+, a local Linux-container engine, `tar` with
 
 ## On the connected machine
 
-1. From the repository checkout, follow **Set the shell variables** and **Build the full image online** in the publishing guide at `docs/publishing-guide.md`. Use an image tag that can be loaded on the target without displacing an unrelated local tag.
+1. From the checkout or the extracted deployment kit, follow **Set the shell variables** and **Build the full image online** in the publishing guide at `docs/publishing-guide.md`. Use an image tag that can be loaded on the target without displacing an unrelated local tag.
 2. Follow **Prepare an exchange directory** there. A named authority needs internet access at this step. If the producer already supplied an extracted set or ZIPs, use that input instead. Set `ENC_EXCHANGE` to the complete directory and `ENC_WORKSPACE` to the intended workspace.
-3. In the same shell, create the transfer directory. Run this from the same checkout that supplied the image. The command uses the actual files on disk, including the host launcher.
+3. In the same shell, create the transfer directory. Run this from the same directory that supplied the image. From a checkout the block builds the ZIP. From an extracted kit, first set `ENC_KIT` to the absolute path of the original ZIP with its adjacent `.sha256` file.
 
 ```bash
 set -euo pipefail
 : "${CONTAINER_ENGINE:?}" "${ENC_IMAGE:?}" "${ENC_WORKSPACE:?}" "${ENC_EXCHANGE:?}"
-test -f enc && test -f scripts/providers.py && test -d "$ENC_EXCHANGE"
+test -f enc && test -d "$ENC_EXCHANGE"
+if [[ -z ${ENC_KIT:-} ]]; then
+  ENC_KIT="$PWD/dist/gs-s57-0.4.0-airgap-build.zip"
+  python3 scripts/package_airgap.py --output "$ENC_KIT"
+fi
+(cd "$(dirname "$ENC_KIT")" && sha256sum -c "$(basename "$ENC_KIT").sha256")
 transfer=$(mktemp -d "${TMPDIR:-/tmp}/enc-transfer.XXXXXXXX")
 "$CONTAINER_ENGINE" image inspect "$ENC_IMAGE" --format '{{.Id}}' | sed 's/^sha256://' > "$transfer/IMAGE-ID"
 "$CONTAINER_ENGINE" image inspect "$ENC_IMAGE" --format '{{.Os}}/{{.Architecture}}' > "$transfer/PLATFORM"
 printf '%s\n' "$ENC_IMAGE" > "$transfer/IMAGE-TAG"
 printf '%s\n' "$ENC_WORKSPACE" > "$transfer/WORKSPACE"
 "$CONTAINER_ENGINE" save --output "$transfer/geoserver.tar" "$ENC_IMAGE"
-tar -czf "$transfer/operator.tar.gz" enc scripts/providers.py docs airgap/README.md LICENSE NOTICE.md
+cp "$ENC_KIT" "$transfer/operator.zip"
 tar -czf "$transfer/exchange.tar.gz" -C "$ENC_EXCHANGE" .
 cp docs/airgap-deployment.md "$transfer/START-HERE.md"
 (
   cd "$transfer"
-  sha256sum geoserver.tar operator.tar.gz exchange.tar.gz IMAGE-ID IMAGE-TAG PLATFORM WORKSPACE START-HERE.md > SHA256SUMS
+  sha256sum geoserver.tar operator.zip exchange.tar.gz IMAGE-ID IMAGE-TAG PLATFORM WORKSPACE START-HERE.md > SHA256SUMS
 )
 echo "Transfer this entire directory: $transfer"
 ```
@@ -63,7 +68,8 @@ actual_platform=$("$CONTAINER_ENGINE" image inspect "$ENC_IMAGE" --format '{{.Os
 
 mkdir -p "${ENC_INSTALL_ROOT:-$HOME/enc-install}"
 install_dir=$(mktemp -d "${ENC_INSTALL_ROOT:-$HOME/enc-install}/deployment.XXXXXXXX")
-tar -xzf "$transfer/operator.tar.gz" -C "$install_dir"
+python3 -m zipfile -e "$transfer/operator.zip" "$install_dir"
+(cd "$install_dir" && sha256sum -c SHA256SUMS)
 export ENC_EXCHANGE="$install_dir/exchange"
 mkdir "$ENC_EXCHANGE"
 tar -xzf "$transfer/exchange.tar.gz" -C "$ENC_EXCHANGE"

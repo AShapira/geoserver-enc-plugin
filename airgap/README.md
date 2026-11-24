@@ -1,15 +1,15 @@
 # S-57 extension: lean offline image build
 
-Prepared by Codex. Release **0.4.0**, 2026-11-23.
+Release **0.4.0**.
 
-This source-only kit adds the S-57 extension to an existing GeoServer image.
+The root Dockerfile in this kit adds the S-57 extension to an existing GeoServer image.
 The default target is **kartoza/geoserver:2.28.0 / GeoTools 34.0**. Its Dockerfile
 compiles against the libraries inside your chosen base image, then adds one JAR.
 The final image inherits the base's user, entrypoint, command and environment.
 This kit is maintained on `main`; no vendor-specific source branch is needed.
 The release archive is `gs-s57-0.4.0-airgap-build.zip`.
 
-Choose this kit when your deliverable is a plugin-enabled server image. For the complete multi-source chart service, use `docs/airgap-deployment.md` from the full checkout containing `enc`. That procedure carries the finished server image, host launcher and exchange directories across the gap. The lean ZIP contains the Java build inputs and this manual.
+Use this recipe for the plugin-enabled vendor image. For the complete viewer and publishing service, start with the extracted ZIP’s root README or the [deployment manual](../docs/airgap-deployment.md). The full service uses `container/Dockerfile`.
 
 ## What to bring into the air gap
 
@@ -52,8 +52,8 @@ Optional tools are separate from the build dependencies:
 | --- | --- |
 | Regenerate this ZIP from the repository | Python 3 standard library; run `python3 scripts/package_airgap.py` |
 | Maven build instead of the Dockerfile | JDK 17/21, Maven, and cached dependency JARs/POMs/build plugins or an internal repository |
-| Prepare a catalogue | Full project's Python scripts, Python 3, GDAL Python bindings and local ENC exchange sets |
-| Publish a chart group using the installed styles | Full project's publisher, Python 3, GDAL bindings, local chart inventory or snapshot, and REST credentials |
+| Prepare a catalogue | Bundled catalogue scripts, Python 3, GDAL Python bindings and local ENC exchange sets |
+| Publish a chart group using the installed styles | Bundled publisher, Python 3, GDAL bindings, local chart inventory or snapshot, and REST credentials |
 | Run the Java tests | Test sources, JUnit Platform Console Standalone 1.11.4 and native ENC fixtures; full-inventory test additionally needs a prepared catalogue |
 | Run Python/image smoke tests | Test scripts and Pillow, with GDAL Python bindings for portrayal generation |
 
@@ -247,15 +247,10 @@ PY
 
 - Java production sources and service/Spring/cache resources required by the plugin.
 - Pinned portrayal resources, including the S-52 lookup XML and three symbol atlases. The current checkout also carries the inland dictionary CSV inputs.
-- One Dockerfile, build-context exclusions, this manual, checksums and license/provenance notices.
+- The chart viewer, host launcher, catalogue preparation tools, publisher and smoke checks.
+- Image recipes, deployment and publishing manuals, build-context exclusions, checksums and license notices.
 
-There is **no prebuilt JAR**, Maven project, test suite, Python environment,
-publisher, catalogue-preparation tool, demo, viewer, chart data or performance
-evidence. Those are not required to build or install the extension. This kit
-installs the shared global styles and graphics automatically. Select an installed
-style for a layer, or use the full project's Python publisher with GDAL bindings
-to assemble the ordered chart groups. Portrayal remains experimental; no ECDIS or
-complete S-52 conformance is claimed.
+The plugin recipe compiles its JAR inside the selected base image. The full chart-service recipe installs the viewer at `/enc.html` and uses the bundled publisher to assemble chart groups. Supply the base image and charts separately.
 
 ## Checks performed for this kit
 

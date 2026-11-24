@@ -13,7 +13,7 @@ Run the Bash commands on the host, from the repository root. Commands inside
 `podman run` or `podman exec` run in a container; `/opt/...` paths are container
 paths. Python, GDAL, Pillow and Java come from the image. The examples use the
 dedicated local demo, its three named volumes and its default depth thresholds.
-For the full service on a disconnected site, use the [air-gap deployment guide](airgap-deployment.md). The [Kartoza guide](kartoza-2.28.0.md) and [source-only kit](../airgap/README.md) cover other image layouts.
+For the full service on a disconnected site, use the [air-gap deployment guide](airgap-deployment.md). The [Kartoza guide](kartoza-2.28.0.md) and [plugin build manual](../airgap/README.md) cover other image layouts.
 
 For a **first installation**, the automated equivalent is:
 

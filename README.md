@@ -1,6 +1,6 @@
 # GeoServer S-57 ENC plugin
 
-A read-only GeoServer S-57 plugin backed by GDAL's S57 reader. Release **0.4.0** installs a shared ENC style library before any charts are loaded and includes a source-only [air-gap installation kit](airgap/README.md) maintained on `main`. Tested Java targets are **GeoServer 2.28.0 / GeoTools 34.0** and **GeoServer 3.0.2 / GeoTools 35.2**; other versions require rebuilding and validation. Each catalogue store serves a complete S-57 exchange set through WMS and GeoWebCache WMTS. It indexes actual chart coverage, selects cells by scale and clips overlapping coverage. Adjacent updates are applied to immutable, indexed GeoPackage snapshots. Single `.000` stores remain supported.
+A read-only GeoServer S-57 plugin backed by GDAL's S57 reader. Release **0.4.0** installs a shared ENC style library before any charts are loaded and includes an [air-gap build and deployment kit](docs/airgap-deployment.md) maintained on `main`. Tested Java targets are **GeoServer 2.28.0 / GeoTools 34.0** and **GeoServer 3.0.2 / GeoTools 35.2**; other versions require rebuilding and validation. Each catalogue store serves a complete S-57 exchange set through WMS and GeoWebCache WMTS. It indexes actual chart coverage, selects cells by scale and clips overlapping coverage. Adjacent updates are applied to immutable, indexed GeoPackage snapshots. Single `.000` stores remain supported.
 
 The supplied portrayal compiler uses pinned OpenCPN S-52 colours, raster symbols, lookup tables, and HPGL patterns/lines. It supplies depth bands, selected safety contours, compound sounding glyphs, light sectors/characteristics, topmarks, formatted labels, scale filtering, and day/dusk/night presets. Versioned [native edge metadata](docs/edge-metadata.md) handles conditional shared-edge priorities, masks, spatial-quality segments and precomputed lookup selection. **Portrayal is experimental and incomplete; this is not an ECDIS implementation or a claim of S-52 conformance.** See [portrayal coverage](docs/portrayal.md) and the [latest OpenCPN comparison and CPU/RAM/disk measurements](docs/portrayal-2026-11-17.md).
 
@@ -10,7 +10,7 @@ The supplied portrayal compiler uses pinned OpenCPN S-52 colours, raster symbols
 | --- | --- |
 | Install the full server online, add a provider or local exchange, verify the charts, or roll back a workspace | [Publish an ENC collection](docs/publishing-guide.md) |
 | Transport the full chart service and data to a disconnected site | [Air-gapped deployment](docs/airgap-deployment.md) |
-| Build the extension into an existing GeoServer image offline | [Source-only kit](airgap/README.md) |
+| Build the extension into an existing GeoServer image offline | [Plugin build manual](airgap/README.md) |
 | Maintain the original NOAA XML/archive demo | [NOAA catalogue maintenance](docs/noaa-catalogue-maintenance.md) |
 
 **Quick start for an already running multi-source server.** In a Bash shell on its host, run from the matching checkout. A named provider prepares the exchange directory. The same deployment command accepts your own extracted S-57 exchange. All workspaces share portrayal styles and graphics.
@@ -96,9 +96,7 @@ The bootstrap preserves an existing demo data directory. Stop the foreground ser
 
 ## Install in an existing GeoServer
 
-For a **lean, source-only offline image build**, use the [air-gap build kit](airgap/README.md).
-It defaults to Kartoza GeoServer **2.28.0**, accepts other prepared base images and library paths,
-and contains only production sources, required resources, build configuration and notices.
+The air-gap ZIP includes the searchable viewer, catalogue preparation and publishing scripts, and the build, deployment and publishing manuals. Its root README covers rebuilding the complete chart service offline. The separate [plugin build recipe](airgap/README.md) defaults to Kartoza GeoServer **2.28.0** and accepts other prepared base images and library paths.
 Run `python3 scripts/package_airgap.py` from the v0.4.0 checkout to create
 `dist/gs-s57-0.4.0-airgap-build.zip` and its SHA-256 checksum.
 The kit requires an existing image with JDK 17/21, matching GeoServer/GeoTools GeoPackage

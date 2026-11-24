@@ -6,13 +6,38 @@
 
 body{height:100dvh;display:flex;flex-direction:column}header{height:auto;min-height:76px;flex-wrap:wrap}.brand{flex:1 1 220px}label{max-width:100%}select{max-width:100%}#map{height:auto;flex:1;min-height:0}footer{flex:none;min-height:35px}
 @media(max-width:700px){.brand{flex-basis:100%}header{padding:8px 12px}select{width:100%}footer{height:auto}}
+.chart{display:flex;flex:1;min-height:0}#map{min-width:0}
+#searchPanel{width:19rem;max-width:100%;padding:16px;overflow:auto;border-right:1px solid #304653}
+#searchPanel h2{font-size:17px;margin:0 0 12px}#searchForm{display:grid;gap:10px}
+#searchPanel input,button.control{font:inherit;color:#eaf1f5;background:#203743;border:1px solid #476371;border-radius:4px;padding:7px 10px}
+#searchPanel input{font-size:14px;min-width:0}button.control{cursor:pointer}
+button.control.primary{background:#12556c}button.control:disabled{opacity:.6;cursor:default}
+#searchStatus{font-size:13px;color:#bdd2dc;margin:12px 0}#results{list-style:none;margin:0;padding:0}
+#results button{width:100%;padding:9px 6px;text-align:left;font:inherit;color:inherit;background:transparent;border:0;border-top:1px solid #304653;cursor:pointer;overflow-wrap:anywhere}
+#results button:hover,#results button[aria-pressed=true]{background:#203d4c}
+#results button[aria-pressed=true]{box-shadow:inset 3px 0 #ffbe40}#results small{display:block;margin-top:3px}
+@media(max-width:700px){.chart{flex-direction:column}#searchPanel{width:100%;max-height:45%;padding:10px 12px;border-right:0;border-bottom:1px solid #304653}}
 </style></head><body>
 <header><div class="brand"><h1>ENC charts</h1><small id="credit">NOAA Office of Coast Survey</small></div>
 <label>Source<select id="dataset" aria-label="Chart source"><option value="noaa">NOAA ENC</option></select></label>
 <label id="regionLabel">Region<select id="region"><option value="ny">New York Harbor</option><option value="sf">San Francisco Bay</option><option value="chesapeake">Chesapeake Bay</option><option value="lakes">Great Lakes · Chicago</option><option value="seattle">Puget Sound · Seattle</option><option value="alaska">Alaska · Anchorage</option><option value="hawaii">Hawaii · Honolulu</option><option value="guam">Guam · Apra Harbor</option><option value="us">United States overview</option></select></label>
 <label>Palette<select id="palette"><option value="day">Day</option><option value="dusk">Dusk</option><option value="night">Night</option></select></label>
-<label>Service<select id="service"><option value="WMTS">WMTS tiles</option><option value="WMS">WMS image</option></select></label></header>
+<label>Service<select id="service"><option value="WMTS">WMTS tiles</option><option value="WMS">WMS image</option></select></label>
+<button id="searchToggle" class="control" aria-expanded="false" aria-controls="searchPanel">Search objects</button></header>
+<main class="chart">
+<aside id="searchPanel" aria-labelledby="searchHeading" hidden>
+  <h2 id="searchHeading">Search this map area</h2>
+  <form id="searchForm">
+    <label>Object type<select id="objectType" required disabled></select></label>
+    <label>Name (optional)<input id="objectName" type="search" placeholder="Full or partial name"></label>
+    <div><button id="findObjects" class="control primary" disabled>Search</button>
+    <button id="clearSearch" class="control" type="button">Clear</button></div>
+  </form>
+  <p id="searchStatus" role="status"></p>
+  <ul id="results" aria-label="Matching objects"></ul>
+</aside>
 <div id="map" aria-label="Interactive nautical chart"></div>
+</main>
 <footer><span id="status">Loading chart…</span><span>Experimental portrayal · <a href="/geoserver/">GeoServer</a> · <a href="/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetCapabilities">WMTS</a></span></footer>
 <script src="/geoserver/openlayers10/ol.js"></script><script>
 const dataset=document.getElementById('dataset');
@@ -35,6 +60,7 @@ map.addLayer(current);end();}
 document.getElementById('region').onchange=e=>{const r=regions[e.target.value];view.animate({center:ol.proj.fromLonLat(r.slice(0,2)),zoom:r[2],duration:350});};
 function selectDataset(){
  const item=catalog[dataset.value];
+ resetSearchSource();
  document.getElementById('credit').textContent=[item.product,item.attribution].filter(Boolean).join(' · ');
  document.getElementById('regionLabel').hidden=dataset.value!=='noaa';
  document.getElementById('region').value='ny';
@@ -49,4 +75,185 @@ fetch('/geoserver/www/enc-sources.json',{cache:'no-store'}).then(r=>r.ok?r.json(
  selectDataset();
 }).catch(()=>{status.textContent='Source list unavailable. Showing NOAA.';});
 document.getElementById('palette').onchange=source;document.getElementById('service').onchange=source;source();
+
+const searchPanel = document.getElementById('searchPanel');
+const searchToggle = document.getElementById('searchToggle');
+const objectType = document.getElementById('objectType');
+const objectName = document.getElementById('objectName');
+const searchStatus = document.getElementById('searchStatus');
+const findObjects = document.getElementById('findObjects');
+const results = document.getElementById('results');
+const classLabels = {
+  LIGHTS: 'Light', BOYLAT: 'Lateral buoy', BCNLAT: 'Lateral beacon', WRECKS: 'Wreck',
+  BRIDGE: 'Bridge', FAIRWY: 'Fairway', ACHARE: 'Anchorage'
+};
+const limit = 25;
+let discovery, searchRequest, selectedFeature;
+
+function highlightStyle(color, fill, width, radius, zIndex) {
+  const stroke = new ol.style.Stroke({color, width});
+  return new ol.style.Style({
+    stroke, fill: new ol.style.Fill({color: fill}), zIndex,
+    image: new ol.style.Circle({radius, stroke})
+  });
+}
+const matchesStyle = [
+  highlightStyle('#142536', 'transparent', 5, 8, 0),
+  highlightStyle('#28dbff', 'rgba(40,219,255,.14)', 2.5, 8, 1)
+];
+const selectedStyle = [
+  highlightStyle('#142536', 'transparent', 7, 11, 2),
+  highlightStyle('#ffbe40', 'rgba(255,190,64,.22)', 4, 11, 3)
+];
+const highlights = new ol.source.Vector();
+map.addLayer(new ol.layer.Vector({
+  source: highlights, zIndex: 1,
+  style: feature => feature === selectedFeature ? selectedStyle : matchesStyle
+}));
+
+function clearMatches() {
+  searchRequest?.abort();
+  selectedFeature = null;
+  highlights.clear();
+  results.replaceChildren();
+  searchStatus.textContent = '';
+}
+function resetSearchSource() {
+  discovery?.abort();
+  clearMatches();
+  objectType.replaceChildren();
+  objectType.disabled = findObjects.disabled = true;
+  if (!searchPanel.hidden) loadTypes();
+}
+function wfsUrl(parameters) {
+  const query = new URLSearchParams({service: 'WFS', version: '1.0.0', ...parameters});
+  return '/geoserver/' + encodeURIComponent(dataset.value) + '/wfs?' + query;
+}
+async function fetchWfsXml(parameters, signal, root) {
+  const response = await fetch(wfsUrl(parameters), {signal});
+  if (!response.ok) throw new Error('WFS request failed');
+  const xml = new DOMParser().parseFromString(await response.text(), 'application/xml');
+  if (xml.documentElement.localName !== root) throw new Error('Unexpected WFS response');
+  return xml;
+}
+async function loadTypes() {
+  discovery?.abort();
+  discovery = new AbortController();
+  const {signal} = discovery;
+  searchStatus.textContent = 'Loading object types…';
+  try {
+    const xml = await fetchWfsXml({request: 'GetCapabilities'}, signal, 'WFS_Capabilities');
+    if (signal.aborted) return;
+    const names = new Set(Array.from(xml.getElementsByTagNameNS('*', 'FeatureType'),
+      type => type.getElementsByTagNameNS('*', 'Name')[0]?.textContent.trim()));
+    for (const [code, label] of Object.entries(classLabels)) {
+      for (const local of [code, 'i_' + code.toLowerCase()]) {
+        const name = dataset.value + ':' + local;
+        if (names.has(name)) objectType.add(new Option(local === code ? label : label + ' (inland)', name));
+      }
+    }
+    objectType.disabled = findObjects.disabled = !objectType.length;
+    searchStatus.textContent = objectType.length ? '' : 'No supported object types in this source.';
+  } catch (error) {
+    if (!signal.aborted) searchStatus.textContent = 'Could not load object types. Reopen search to retry.';
+  }
+}
+
+function viewportFilter() {
+  const projection = view.getProjection();
+  const parts = ol.extent.wrapAndSliceX(view.calculateExtent(map.getSize()), projection);
+  const boxes = parts.map(extent => {
+    const bounds = ol.proj.transformExtent(extent, projection, 'EPSG:4326');
+    return "BBOX(geom," + bounds.join(',') + ",'EPSG:4326')";
+  });
+  return '(' + boxes.join(' OR ') + ')';
+}
+function addResult(feature, typeLabel) {
+  const row = document.createElement('li');
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.setAttribute('aria-pressed', 'false');
+  const name = feature.get('OBJNAM');
+  const nationalName = feature.get('NOBJNM');
+  button.textContent = name || nationalName || 'Unnamed ' + typeLabel.toLowerCase();
+  const detail = document.createElement('small');
+  const alternate = name && nationalName !== name ? nationalName : '';
+  detail.textContent = [alternate, typeLabel, feature.get('_enc_cell')].filter(Boolean).join(' · ');
+  button.append(detail);
+  button.onclick = () => {
+    results.querySelector('[aria-pressed=true]')?.setAttribute('aria-pressed', 'false');
+    button.setAttribute('aria-pressed', 'true');
+    selectedFeature = feature;
+    feature.changed();
+    view.fit(feature.getGeometry(), {
+      duration: 250, padding: [24, 24, 24, 24], maxZoom: Math.max(view.getZoom(), 15)
+    });
+  };
+  row.append(button);
+  results.append(row);
+}
+async function searchObjects(event) {
+  event.preventDefault();
+  clearMatches();
+  if (view.getZoom() < 10) {
+    searchStatus.textContent = 'Zoom in to search this map area.';
+    return;
+  }
+  const typeName = objectType.value;
+  if (!typeName) return;
+  const typeLabel = objectType.selectedOptions[0].textContent;
+  const term = objectName.value.trim();
+  let filter = viewportFilter();
+  searchRequest = new AbortController();
+  const {signal} = searchRequest;
+  searchStatus.textContent = 'Searching…';
+  try {
+    const schema = await fetchWfsXml({request: 'DescribeFeatureType', typeName}, signal, 'schema');
+    if (signal.aborted) return;
+    const fields = new Set(Array.from(schema.getElementsByTagNameNS('*', 'element'), el => el.getAttribute('name')));
+    const names = ['OBJNAM', 'NOBJNM'].filter(name => fields.has(name));
+    if (term) {
+      if (!names.length) {
+        searchStatus.textContent = 'This type has no name field. Clear the name to search by type.';
+        return;
+      }
+      // A literal substring also lets names contain percent signs and underscores.
+      const literal = "'" + term.replaceAll("'", "''") + "'";
+      const tests = names.map(name => `strIndexOf(strToLowerCase(${name}),strToLowerCase(${literal})) >= 0`);
+      filter += ' AND (' + tests.join(' OR ') + ')';
+    }
+    const properties = ['geom', ...names];
+    if (fields.has('_enc_cell')) properties.push('_enc_cell');
+    const response = await fetch(wfsUrl({
+      request: 'GetFeature', typeName, srsName: 'EPSG:4326', outputFormat: 'application/json',
+      propertyName: properties.join(','),
+      CQL_FILTER: filter, maxFeatures: limit + 1
+    }), {signal});
+    if (!response.ok) throw new Error('WFS request failed');
+    const collection = await response.json();
+    if (signal.aborted) return;
+    const page = {...collection, features: collection.features.slice(0, limit)};
+    const features = new ol.format.GeoJSON().readFeatures(page, {
+      dataProjection: 'EPSG:4326', featureProjection: view.getProjection()
+    });
+    highlights.addFeatures(features);
+    for (const feature of features) addResult(feature, typeLabel);
+    if (collection.features.length > limit) searchStatus.textContent = 'Showing the first 25 matches.';
+    else if (!features.length) searchStatus.textContent = 'No matches in this map area.';
+    else searchStatus.textContent = features.length + (features.length === 1 ? ' match.' : ' matches.');
+  } catch (error) {
+    if (!signal.aborted) searchStatus.textContent = 'Search failed. Try searching this area again.';
+  }
+}
+searchToggle.onclick = () => {
+  searchPanel.hidden = !searchPanel.hidden;
+  searchToggle.setAttribute('aria-expanded', String(!searchPanel.hidden));
+  map.updateSize();
+  if (!searchPanel.hidden && !objectType.length) loadTypes();
+};
+document.getElementById('searchForm').onsubmit = searchObjects;
+document.getElementById('clearSearch').onclick = () => {
+  objectName.value = '';
+  if (!objectType.disabled) clearMatches();
+};
 </script></body></html>
