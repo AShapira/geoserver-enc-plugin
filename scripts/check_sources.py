@@ -46,6 +46,7 @@ def check(root, workspace, view, out):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--url',default='http://127.0.0.1:18080/geoserver')
+    parser.add_argument('--public-url', help='Public GeoServer base URL for the viewer link in receipts')
     parser.add_argument('--workspace',action='append')
     parser.add_argument('--out',type=Path)
     args = parser.parse_args()
@@ -53,4 +54,6 @@ if __name__ == '__main__':
     with urlopen(args.url+'/www/enc-sources.json') as response:
         registry=json.load(response)
     results={ws:check(args.url,ws,registry[ws]['view'],args.out) for ws in args.workspace or sorted(registry)}
+    for record in results.values():
+        record['viewer'] = (args.public_url or args.url).rstrip('/')+'/enc/viewer/index.html'
     if args.out: (args.out/'results.json').write_text(json.dumps(results,indent=2)+'\n')

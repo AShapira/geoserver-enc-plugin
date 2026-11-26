@@ -5,27 +5,26 @@ Prepared by Codex.
 | Starting point | What to do |
 | --- | --- |
 | You have a running multi-source GeoServer | Set the shell variables, check the server, then prepare and deploy an exchange. |
-| You are installing online | Follow the steps below in order, including the image build and first start. |
+| You are installing online | Follow the steps below in order, including the plugin install and first start. |
 | The target has no internet access | Start with the [two-machine air-gap procedure](airgap-deployment.md). It supplies the image, charts, host command and manuals. Resume here after import. |
 | You need only the extension JAR in an existing server image | Use the [plugin build manual](../airgap/README.md) or the [Kartoza 2.28.0 manual](kartoza-2.28.0.md). |
 | You maintain the original NOAA XML/archive installation | Use the [NOAA maintenance procedure](noaa-catalogue-maintenance.md). A NOAA workspace created by `enc deploy` follows this guide. |
 
 ## Set the shell variables
 
-Run the blocks in **one Bash shell** on the Linux container-engine host, from the checkout containing `enc` or the extracted operator bundle. The host needs Python 3.9+ and a local Podman or Docker engine that can mount the exchange directory. GDAL, Java and Pillow come with the full server image. Use a writable working directory for deployment receipts.
+Run the blocks in **one Bash shell** on the Linux container-engine host, from the checkout containing `enc` or the extracted operator bundle. The host needs Python 3.9+ and a local Podman or Docker engine that can mount the exchange directory. The operator image supplies the publishing tools and uses the server’s GDAL version. Use a writable working directory for deployment receipts.
 
 ```bash
 set -euo pipefail
 export CONTAINER_ENGINE="${CONTAINER_ENGINE:-podman}"
 export ENC_CONTAINER="${ENC_CONTAINER:-geoserver-enc}"
-export ENC_IMAGE="${ENC_IMAGE:-localhost/geoserver-enc:multisource}"
 export ENC_PORT="${ENC_PORT:-18080}"
 export ENC_WORKSPACE="${ENC_WORKSPACE:-be_coast}"
 export ENC_EXCHANGE="${ENC_EXCHANGE:-$PWD/exchanges/belgium-1}"
 python3 enc deploy --help >/dev/null
 ```
 
-`ENC_CONTAINER` selects the GeoServer process. `ENC_WORKSPACE` selects the collection inside it. Start its name with a letter and use ASCII letters, digits and underscores. Use a different workspace for each collection you want to serve side by side. For an existing server, the publisher uses that container’s actual image and writable cache mount.
+`ENC_CONTAINER` selects the GeoServer process. `ENC_WORKSPACE` selects the collection inside it. Start its name with a letter and use ASCII letters, digits and underscores. Use a different workspace for each collection you want to serve side by side. For an existing server, the publisher uses that container’s operator image and mount paths.
 
 With default credentials the loopback demo uses `admin` and `geoserver`. To configure a fresh server or authenticate to an existing account, supply `GEOSERVER_USER` and `GEOSERVER_PASSWORD` through the environment. An unattended agent can inherit them from its secret store. In an interactive shell you can prompt for the password:
 
@@ -36,65 +35,15 @@ echo
 export GEOSERVER_PASSWORD
 ```
 
-## Build the full image online
-
-Skip this step for a running compatible server or a verified image loaded from the transfer bundle. On a connected host, run the build from the checkout root or the extracted kit containing `enc`. The base image and OS packages must be available. The image architecture must match the target.
+## Start and check the server
 
 ```bash
-build_options=()
-if [[ "$CONTAINER_ENGINE" == podman ]]; then build_options=(--format docker); fi
-"$CONTAINER_ENGINE" build "${build_options[@]}" -f container/Dockerfile -t "$ENC_IMAGE" .
+container/demo.sh --empty
+container/operator.sh python3 -c 'from osgeo import ogr; from PIL import Image'
+"$CONTAINER_ENGINE" exec "$ENC_CONTAINER" /opt/enc/scripts/ogr_inland.py --version
 ```
 
-## Start a new server
-
-For an existing installation, go directly to [Check the server](#check-the-server). For a fresh installation, choose a free container name, its two new volume names, and a free loopback port. The engine creates named volumes for GeoServer configuration and chart data. Allow space on the host for the exchange and in the engine’s storage for the image, staged sources, GeoPackages, edge databases and tiles. A refresh needs space alongside the previous generation.
-
-```bash
-enc_access=(-p "127.0.0.1:$ENC_PORT:8080")
-```
-
-On a fresh configuration volume, the start command passes any supplied publisher credentials to the official image as its initial administrator settings. For a service test with the container network disabled, set `enc_access=(--network none)` instead. The checks below run inside the server and work in either mode. Browser access uses the published port.
-
-```bash
-enc_admin=()
-if [[ -n ${GEOSERVER_PASSWORD:-} ]]; then
-  export GEOSERVER_ADMIN_USER="${GEOSERVER_USER:-admin}"
-  export GEOSERVER_ADMIN_PASSWORD="$GEOSERVER_PASSWORD"
-  enc_admin=(-e GEOSERVER_ADMIN_USER -e GEOSERVER_ADMIN_PASSWORD)
-fi
-"$CONTAINER_ENGINE" run --pull=never -d --name "$ENC_CONTAINER" "${enc_admin[@]}" \
-  --restart unless-stopped --memory 6g "${enc_access[@]}" \
-  -v "${ENC_CONTAINER}-config:/opt/geoserver_data" \
-  -v "${ENC_CONTAINER}-cache:/opt/enc-cache" "$ENC_IMAGE"
-```
-
-## Check the server
-
-These checks also apply when adding charts to an existing instance. They confirm that the target has the publisher and inland dictionary, exposes a writable cache mount to the staging helper, and accepts requests on its internal GeoServer port.
-
-```bash
-"$CONTAINER_ENGINE" inspect --format '{{json .Mounts}}' "$ENC_CONTAINER" | python3 -c '
-import json, sys
-mounts = {m["Destination"]: m for m in json.load(sys.stdin)}
-if not mounts.get("/opt/enc-cache", {}).get("RW"):
-    sys.exit("The target needs a writable volume or bind mount at /opt/enc-cache")
-'
-"$CONTAINER_ENGINE" exec "$ENC_CONTAINER" sh -ec '
-  test -r /opt/enc/scripts/deployment.py
-  test -x /opt/enc/scripts/ogr_inland.py
-  test -r /opt/enc/s57/s57objectclasses.csv
-'
-enc_root=http://127.0.0.1:8080/geoserver
-enc_capabilities="$enc_root/ows?service=WMS&request=GetCapabilities&version=1.3.0"
-for attempt in {1..90}; do
-  if "$CONTAINER_ENGINE" exec "$ENC_CONTAINER" curl -fsS --max-time 5 "$enc_capabilities" >/dev/null 2>&1; then break; fi
-  sleep 2
-done
-"$CONTAINER_ENGINE" exec "$ENC_CONTAINER" curl -fsS --max-time 10 "$enc_capabilities" >/dev/null
-```
-
-If readiness fails, inspect `"$CONTAINER_ENGINE" logs --tail 80 "$ENC_CONTAINER"` before starting an import. If a publisher or dictionary file is missing, select the container created from the full image.
+The launcher verifies the extension checksum, starts the published GeoServer image and waits for WMS readiness. Use `--empty --recreate` once to migrate a project-owned container with existing volumes. The optional `ENC_NETWORK=none` setting runs the server on container loopback for a disconnected rehearsal.
 
 ## Prepare an exchange directory
 
@@ -126,7 +75,7 @@ export ENC_EXCHANGE=/path/to/ENC_ROOT
 
 The following block is the **unattended deployment entry point** once the target, credentials and input directory are set. It records the staged generation, checks that GeoServer advertises that same generation and cell count, and requests chart images. A successful `ENC_GENERATION=…` line on its own means staging finished. Publication and rendering still have to succeed.
 
-For a named provider, leave `enc_display` empty to use its title and bookmark. For your own exchange, you can set it to an array such as `enc_display=(--title "Ohio River" --view -80.013 40.438 17)` if that point is covered. Coordinates are longitude, latitude, then an integer zoom from 2 to 20. Detailed harbour charts often need zoom 17–19.
+For a named provider, leave `enc_display` empty to use its title and rendering check location. For your own exchange, you can set it to an array such as `enc_display=(--title "Ohio River" --view -80.013 40.438 17)` if that point is covered. Coordinates are longitude, latitude, then an integer zoom from 2 to 20. Detailed harbour charts often need zoom 17–19.
 
 ```bash
 enc_display=()
@@ -159,16 +108,18 @@ if (entry["generation"] != generation or entry["cells"] != inventory["indexed_ce
     sys.exit("Published generation or cell count differs from the staged inventory")
 print(workspace, entry["cells"], "indexed cells", generation)
 PY
-enc_check_dir="/tmp/$(basename "$enc_receipt")"
-"$CONTAINER_ENGINE" exec "$ENC_CONTAINER" python3 /opt/enc/scripts/check_sources.py \
-  --url "$enc_root" --workspace "$ENC_WORKSPACE" --out "$enc_check_dir"
+enc_check_dir="/opt/enc-cache/receipts/$(basename "$enc_receipt")"
+container/operator.sh python3 /opt/enc/scripts/check_sources.py \
+  --url "$enc_root" --public-url "${ENC_PUBLIC_URL:-http://127.0.0.1:${ENC_PORT:-18080}/geoserver}" --workspace "$ENC_WORKSPACE" --out "$enc_check_dir"
 "$CONTAINER_ENGINE" cp "$ENC_CONTAINER:$enc_check_dir/results.json" "$enc_receipt/results.json"
 echo "Verified deployment. Receipt: $enc_receipt"
 ```
 
 Success means the block exits zero and the receipt includes `results.json` for day, dusk and night. The check renders a nonblank WMS image and WMTS tile for each palette, checks that the palettes differ and confirms a repeated WMTS tile is a cache `HIT`. An agent can return the workspace, generation, cell count, viewer URL and receipt path. Retain the source exchange referenced by the receipt for rollback. If the stage needs fewer import processes, pass `--workers 2` to `enc deploy` (default 4, range 1–16).
 
-At the default host port, open the [viewer](http://127.0.0.1:18080/enc.html), choose **Source**, then try **Palette** and **Service**. At zoom 10 or closer, **Search objects** finds chart features in the current map area by type and optional partial name. Other GIS clients can discover `WORKSPACE:chart_day`, `chart_dusk` and `chart_night` through [WMS](http://127.0.0.1:18080/geoserver/wms?SERVICE=WMS&REQUEST=GetCapabilities) or [WMTS](http://127.0.0.1:18080/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetCapabilities). Use the chosen host port if it differs from 18080.
+At the default host port, open the [viewer](http://127.0.0.1:18080/geoserver/enc/viewer/index.html), choose **Chart**, or use **Layers** to draw individual published layers. The viewer opens at the published extent. It discovers public or signed-in S-57 layers directly through WMS, including manually published layers and groups. **Service** can use advertised WMTS caches or request WMS images. At zoom 10 or closer, **Search objects** finds chart features in the current map area by type and optional partial name. Other GIS clients can discover `WORKSPACE:chart_day`, `chart_dusk` and `chart_night` through [WMS](http://127.0.0.1:18080/geoserver/wms?SERVICE=WMS&REQUEST=GetCapabilities) or [WMTS](http://127.0.0.1:18080/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetCapabilities). Use the chosen host port if it differs from 18080.
+
+The viewer requests WMS 1.3.0 GetCapabilities with `encDiscovery=true`. The plugin identifies S-57 entries in the caller’s advertised catalogue. Named groups can combine several ENC stores. The **Layers** panel shows published feature types by workspace and store. A layer can be searchable through WFS even when it is only available as a WMS image for rendering. Refresh the page after publishing.
 
 Each workspace has its own inventory, cache and chart groups. The plugin installs the [global style library](shared-styles.md) at startup. Each publication selects the installed styles for its chart classes. Lowercase inland classes use an `i_` prefix to preserve distinct classes in SQLite. The inventory records edition, applied updates, scale and classes per cell. Under `$enc_dir`, inspect `cache/warm-report.json` for conversions, `edge-report.log` for native edges, and `portrayal-day/publication.json` for plotted classes and portrayal gaps.
 
@@ -210,10 +161,16 @@ Staging errors occur before publication. The chart groups track the selected gen
 - **Prepare says the directory exists.** Select a new output path to download a fresh snapshot. To reuse an already prepared directory, proceed directly to deployment.
 - **REST returns 401 or 403.** Check that the provided account can publish workspaces, global styles and GeoWebCache groups. Pass its credentials through the environment on the host running `enc deploy`.
 - **Staging or disk-space failure.** Check free space both on the exchange filesystem and in container storage. Inspect the receipt log and the reported path under `/opt/enc-cache/catalogues/WORKSPACE/`. An index failure may leave `failed-GENERATION.json` there. Preserve the serving generation while correcting the input.
-- **Blank overview.** Select the source again to return to its opening view, then zoom in. Detailed Inland ENCs can cover a narrow channel and have no overview band. The extent includes the whole collection, sometimes including cross-border cells.
+- **Blank overview.** Select a chart to fit its published extent, then zoom in to an area with coverage. Detailed Inland ENCs can cover a narrow channel and have no overview band. The extent includes the whole collection, sometimes including cross-border cells.
 - **Missing update or conflicting copies.** Keep `.001`, `.002` and later files next to their matching `.000`. Preserve the producer’s directory structure and use a complete reissued base or a continuous chain. The importer rejects divergent duplicate copies. NOAA also reconciles against the active product catalogue.
 - **Unexpected input format.** Supply unencrypted S-57 base cells or a ZIP containing them. Encrypted S-63 products, S-101 datasets and rendered map tiles require other readers.
 - **Source data issues.** One Romanian export cell, `3R7PAM02`, has a truncated edition 1/update 5. Preparation retains its original bytes and records the hash-verified replacement edition 1/update 7 from Danube FIS. Another cell, `2P7D0942`, omits the coverage category. It is inventoried, but contributes no charted area. [Danube FIS published archive](https://www.danubeportal.com/application/cache/uploads/charts/electronic/RO/10/1726821665.zip)
 - **Incomplete native linework.** Two German Main cells (`1W7MA230` and `1W7MA240`) have three edges without both endpoint nodes. Five feature-to-edge references are omitted from native line rendering. The affected sidecar databases record the class, feature ID and edge ID in `omitted_links`.
 - **Nonnumeric source depths.** In the Dutch cell `1R7EMS02`, GDAL 3.8 reads the literal `UNKNOWN` in an obstruction depth as zero. Interpret that value as unknown.
 - **Missing chart details.** This experimental renderer implements part of the S-52 and Inland ENC portrayal rules. Inspect the publication report for omissions. Use official navigation products for navigation. [Portrayal coverage](portrayal.md)
+
+To exercise the installed viewer in Chromium, use a local chart layer whose extent fits at zoom 10 or closer. With Python Playwright and its Chromium browser installed, run the following against your GeoServer base URL. The check loads the plugin page, displays the qualified layer on a blank base, searches the viewport, and selects a matching feature.
+
+```bash
+python3 tests/viewer_browser.py --url http://127.0.0.1:18080/geoserver --layer local_charts:LIGHTS
+```

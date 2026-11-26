@@ -1,16 +1,20 @@
 # GeoServer S-57 ENC plugin
 
-A read-only GeoServer S-57 plugin backed by GDAL's S57 reader. Release **0.4.0** installs a shared ENC style library before any charts are loaded and includes an [air-gap build and deployment kit](docs/airgap-deployment.md) maintained on `main`. Tested Java targets are **GeoServer 2.28.0 / GeoTools 34.0** and **GeoServer 3.0.2 / GeoTools 35.2**; other versions require rebuilding and validation. Each catalogue store serves a complete S-57 exchange set through WMS and GeoWebCache WMTS. It indexes actual chart coverage, selects cells by scale and clips overlapping coverage. Adjacent updates are applied to immutable, indexed GeoPackage snapshots. Single `.000` stores remain supported.
+A read-only GeoServer S-57 plugin backed by GDAL's S57 reader. Release **0.5.0** installs a shared ENC style library before any charts are loaded and includes an [air-gap build and deployment kit](docs/airgap-deployment.md) maintained on `main`. Tested Java targets are **GeoServer 2.28.0 / GeoTools 34.0** and **GeoServer 3.0.2 / GeoTools 35.2**; other versions require rebuilding and validation. Each catalogue store serves a complete S-57 exchange set through WMS and GeoWebCache WMTS. It indexes actual chart coverage, selects cells by scale and clips overlapping coverage. Adjacent updates are applied to immutable, indexed GeoPackage snapshots. Single `.000` stores remain supported.
 
 The supplied portrayal compiler uses pinned OpenCPN S-52 colours, raster symbols, lookup tables, and HPGL patterns/lines. It supplies depth bands, selected safety contours, compound sounding glyphs, light sectors/characteristics, topmarks, formatted labels, scale filtering, and day/dusk/night presets. Versioned [native edge metadata](docs/edge-metadata.md) handles conditional shared-edge priorities, masks, spatial-quality segments and precomputed lookup selection. **Portrayal is experimental and incomplete; this is not an ECDIS implementation or a claim of S-52 conformance.** See [portrayal coverage](docs/portrayal.md) and the [latest OpenCPN comparison and CPU/RAM/disk measurements](docs/portrayal-2026-11-17.md).
+
+The plugin includes an **ENC viewer and search demo** at `<geoserver-base>/enc/viewer/index.html`. Publish a feature type from any S-57 datastore, then open **Layers** to display it or **Search objects** to find features in the current map area. Named ENC chart groups appear in **Chart**. The viewer uses the user's GeoServer permissions and works offline.
 
 ## Deploy an ENC collection
 
 | Task | Manual |
 | --- | --- |
+| Find national ENC publishers, chart coverage, downloads and reuse terms | [National charting agencies and their electronic navigational charts](docs/enc-charting-agencies.md) |
 | Install the full server online, add a provider or local exchange, verify the charts, or roll back a workspace | [Publish an ENC collection](docs/publishing-guide.md) |
 | Transport the full chart service and data to a disconnected site | [Air-gapped deployment](docs/airgap-deployment.md) |
-| Build the extension into an existing GeoServer image offline | [Plugin build manual](airgap/README.md) |
+| Install a versioned plugin ZIP on an existing GeoServer | [Standalone install manual](airgap/README.md) |
+| Build S-57 into GeoServer Cloud 3.0.0 and 3.0.2 services | [Cloud integration and checks](cloud/README.md) |
 | Maintain the original NOAA XML/archive demo | [NOAA catalogue maintenance](docs/noaa-catalogue-maintenance.md) |
 
 **Quick start for an already running multi-source server.** In a Bash shell on its host, run from the matching checkout. A named provider prepares the exchange directory. The same deployment command accepts your own extracted S-57 exchange. All workspaces share portrayal styles and graphics.
@@ -19,11 +23,11 @@ The supplied portrayal compiler uses pinned OpenCPN S-52 colours, raster symbols
 set -euo pipefail
 python3 enc prepare --provider be_coast --out exchanges/belgium
 python3 enc deploy exchanges/belgium --workspace be_coast
-podman exec geoserver-enc python3 /opt/enc/scripts/check_sources.py \
+container/operator.sh python3 /opt/enc/scripts/check_sources.py \
   --url http://127.0.0.1:8080/geoserver --workspace be_coast
 ```
 
-Open the [chart viewer](http://127.0.0.1:18080/enc.html) and select the source. For an unattended deployment with generation checks and a saved WMS/WMTS receipt, follow [Publish and verify](docs/publishing-guide.md#publish-and-verify).
+Open the [chart viewer](http://127.0.0.1:18080/geoserver/enc/viewer/index.html) and select a published chart or individual ENC layer. For an unattended deployment with generation checks and a saved WMS/WMTS receipt, follow [Publish and verify](docs/publishing-guide.md#publish-and-verify).
 
 ## Try the NOAA demo
 
@@ -33,9 +37,9 @@ For a fresh NOAA demo, run from this directory with Podman and network access. T
 container/demo.sh
 ```
 
-Open **[the interactive chart](http://127.0.0.1:18080/enc.html)**. Switch region, day/dusk/night palette, or WMS/WMTS service. Pan anywhere in NOAA coverage; bookmarks do not limit the catalogue.
+Open **[the interactive chart](http://127.0.0.1:18080/geoserver/enc/viewer/index.html)**. Choose a published chart and palette, or open **Layers** to display individual ENC layers. Pan or zoom within the chart coverage.
 
-The image extends the official vanilla **`docker.osgeo.org/geoserver:3.0.2`** image with this plugin and GDAL tooling. A build stage compiles the plugin against the image's own GeoServer libraries; no host Java, Maven, GDAL or Python environment is required. The first run downloads NOAA's full exchange archive and prepares every active cell. The validated snapshot contains **7,114 active cells, 6,965,828 source features and no failed imports**, from the catalogue valid 2026-11-14. A single current metadata generation uses about **15 GiB** for sources, converted data, edge sidecars and GeoServer state, plus container images; allow at least 25 GiB free. Retained older metadata generations consume additional space. Downloads, imports and first tile renders take time.
+The launcher starts the stock **`docker.osgeo.org/geoserver:3.0.2-gdal`** image with the locally built extension ZIP mounted in its community plugin directory. A separate operator container handles publication, prewarming and tile seeding. The first run downloads NOAA's full exchange archive and prepares every active cell. The validated snapshot contains **7,114 active cells, 6,965,828 source features and no failed imports**, from the catalogue valid 2026-11-14. A single current metadata generation uses about **15 GiB** for sources, converted data, edge sidecars and GeoServer state, plus container images; allow at least 25 GiB free. Retained older metadata generations consume additional space. Downloads, imports and first tile renders take time.
 
 The container runs detached as `geoserver-enc`, publishes IPv4 loopback port 18080, has a health check and uses `unless-stopped`. This port was verified from both WSL and Windows localhost. Windows/WSL forwarding still depends on the local WSL configuration. No firewall changes are made. To rebuild after source changes, retaining the catalogue and caches:
 
@@ -52,7 +56,7 @@ Three dedicated named volumes retain data: `geoserver-enc-catalogue` (read-only 
 
 Endpoints:
 
-- Viewer: <http://127.0.0.1:18080/enc.html>
+- Viewer: <http://127.0.0.1:18080/geoserver/enc/viewer/index.html>
 - Admin: <http://127.0.0.1:18080/geoserver/>
 - WMS: <http://127.0.0.1:18080/geoserver/wms>
 - WMTS capabilities: <http://127.0.0.1:18080/geoserver/gwc/service/wmts?SERVICE=WMTS&REQUEST=GetCapabilities>
@@ -60,7 +64,7 @@ Endpoints:
 - WMTS grid sets: `EPSG:4326` and `EPSG:900913` (Web Mercator).
 
 See the [step-by-step NOAA setup and update guide](docs/noaa-catalogue-maintenance.md),
-[full-catalogue validation](docs/catalogue-validation.md), [container build](container/Dockerfile) and [design decisions](docs/decisions.md).
+[full-catalogue validation](docs/catalogue-validation.md), [standalone installation](airgap/README.md) and [design decisions](docs/decisions.md).
 
 ### Optional single-cell development demo
 
@@ -96,17 +100,10 @@ The bootstrap preserves an existing demo data directory. Stop the foreground ser
 
 ## Install in an existing GeoServer
 
-The air-gap ZIP includes the searchable viewer, catalogue preparation and publishing scripts, and the build, deployment and publishing manuals. Its root README covers rebuilding the complete chart service offline. The separate [plugin build recipe](airgap/README.md) defaults to Kartoza GeoServer **2.28.0** and accepts other prepared base images and library paths.
-Run `python3 scripts/package_airgap.py` from the v0.4.0 checkout to create
-`dist/gs-s57-0.4.0-airgap-build.zip` and its SHA-256 checksum.
-The kit requires an existing image with JDK 17/21, matching GeoServer/GeoTools GeoPackage
-libraries, and GDAL with S57/GPKG/SQLite drivers and its native libraries/data.
-Its [manual](airgap/README.md) lists all build/runtime dependencies, optional tooling,
-and the exact versions tested. The [full Kartoza guide](docs/kartoza-2.28.0.md) also
-covers the optional chart publisher and the compatibility validation.
+Build both plugin releases with `container/build-plugins.sh`. Install the matching ZIP using the [official image procedure](airgap/README.md) or the [Kartoza 2.28.0 procedure](docs/kartoza-2.28.0.md). For disconnected sites, [export the stock image, plugin and operator kit](docs/airgap-deployment.md). For GeoServer Cloud, use the [release-specific service image build](cloud/README.md).
 
 1. Use a tested target with Java 17 or 21, and GDAL 3.2+ with S57, GPKG and SQLite drivers (tested with 3.8.4 in containers and 3.11.5 in development). Ensure GDAL's data dictionaries and PROJ data are available to the server process.
-2. Build with `mvn package` for GeoServer 3.0.2, or `mvn -Pgeoserver-2.28 package` for 2.28.0. Stop GeoServer, remove an older S-57 plugin JAR if upgrading, copy **only** `target/gs-s57-0.4.0.jar` into `WEB-INF/lib`, then restart. The tested binaries already contain `gt-geopkg` and its dependencies; do not replace GeoTools JARs. If your custom distribution omits them, install its matching GeoPackage support first. The first startup installs the [shared ENC style library](docs/shared-styles.md), including all three palettes, before any chart store exists.
+2. Build with `mvn package` for GeoServer 3.0.2, or `mvn -Pgeoserver-2.28 package` for 2.28.0. Stop GeoServer, remove an older S-57 plugin JAR if upgrading, copy **only** `target/gs-s57-0.5.0.jar` into `WEB-INF/lib`, then restart. The tested binaries already contain `gt-geopkg` and its dependencies; do not replace GeoTools JARs. If your custom distribution omits them, install its matching GeoPackage support first. The first startup installs the [shared ENC style library](docs/shared-styles.md), including all three palettes, before any chart store exists.
 3. Add a store of type **S-57 ENC (GDAL)**, supplying:
 
 | Parameter | Value |
@@ -171,16 +168,16 @@ python scripts/smoke_test.py
 python scripts/package.py
 ```
 
-For the running national container, run the regional WMS, axis-order and three-palette WMTS checks inside it:
+For the running national container, run the regional WMS, axis-order and three-palette WMTS checks from its operator container:
 
 ```bash
-podman exec geoserver-enc python3 /opt/enc/scripts/catalogue_smoke.py \
-  --url http://127.0.0.1:8080/geoserver --out /tmp/enc-smoke
+container/operator.sh python3 /opt/enc/scripts/catalogue_smoke.py \
+  --url http://127.0.0.1:8080/geoserver --out /opt/enc-cache/enc-smoke
 ```
 
 Set `S57_CATALOGUE=/absolute/path/catalogue.sqlite` as well as `S57_TEST_FILE` and `OGR2OGR` for native catalogue Java tests. The original [single-cell validation](docs/validation.md) is historical; current national-container results are in [catalogue validation](docs/catalogue-validation.md).
 
-Without `S57_TEST_FILE`, the native cell integration tests are explicitly skipped; other Java and Python tests still run. See [validation evidence](docs/validation.md) for the actual executed checks and limits. `scripts/package.py` creates an install ZIP plus source and notices under `dist/`.
+Without `S57_TEST_FILE`, the native cell integration tests are explicitly skipped; other Java and Python tests still run. See [validation evidence](docs/validation.md) for the actual executed checks and limits. `scripts/package.py` builds and tests both Maven targets and writes two installable ZIPs with notices and checksums under `dist/`. The [installation results](docs/plugin-install-validation.json) record the standalone and Cloud image identities and protocol checks.
 
 ## Decisions and future formats
 

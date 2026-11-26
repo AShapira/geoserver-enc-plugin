@@ -1,0 +1,131 @@
+# Isolated pgconfig acceptance cluster. Set CLOUD_TAG, ENC_CHARTS, and the three passwords.
+x-env: &env
+  SPRING_PROFILES_ACTIVE: pgconfig
+  SPRING_PROFILES_INCLUDE: config-first
+  CONFIG_SERVER_URL: http://config:8080
+  GEOSERVER_BASE_PATH: /geoserver/cloud
+  GEOSERVER_DATA_DIR: /opt/app/data_directory
+  GEOWEBCACHE_CACHE_DIR: /data/geowebcache
+  GEOSERVER_ADMIN_USERNAME: admin
+  GEOSERVER_ADMIN_PASSWORD: ${GEOSERVER_PASSWORD:?}
+  RABBITMQ_USER: geoserver
+  RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?}
+  JAVA_OPTS: -Xms128m -Xmx950m -Denc.installStyles=false
+x-service: &service
+  user: '1000:1000'
+  environment: *env
+  volumes:
+    - ${ENC_CHARTS:?}:/charts:ro
+    - cache:/enc-cache
+    - resources:/opt/app/data_directory
+    - tiles:/data/geowebcache
+  depends_on:
+    config: {condition: service_healthy}
+    consul: {condition: service_healthy}
+    geodatabase: {condition: service_healthy}
+  networks: [backend]
+  mem_limit: 1600m
+  cpus: 2
+services:
+  init-volumes:
+    image: docker.io/library/alpine:3.24.0
+    command: [sh, -ec, 'chown 1000:1000 /cache /config /tiles']
+    volumes: [cache:/cache, resources:/config, tiles:/tiles]
+    network_mode: none
+  geodatabase:
+    image: docker.io/postgis/postgis:17-3.5
+    environment:
+      POSTGRES_USER: geoserver
+      POSTGRES_DB: geoserver
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+    volumes: [database:/var/lib/postgresql/data]
+    networks: [backend]
+    healthcheck:
+      test: [CMD, pg_isready, -U, geoserver, -d, geoserver]
+      interval: 5s
+      retries: 40
+  rabbitmq:
+    hostname: rabbitmq
+    volumes: [rabbitdata:/var/lib/rabbitmq]
+    image: docker.io/library/rabbitmq:4.1-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: geoserver
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?}
+    networks: [backend]
+    healthcheck:
+      test: [CMD, su-exec, rabbitmq, rabbitmq-diagnostics, -q, ping]
+      interval: 5s
+      retries: 40
+  consul:
+    image: docker.io/hashicorp/consul:1.22.5
+    command: agent -server -bootstrap-expect=1 -client=0.0.0.0 -data-dir=/consul/data
+    networks: [backend]
+    healthcheck:
+      test: [CMD, consul, info]
+      interval: 5s
+      retries: 40
+  config:
+    image: localhost/enc-cloud-config:${CLOUD_TAG:?}
+    healthcheck:
+      test: [CMD, curl, -fsS, http://localhost:8081/actuator/health]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+    environment:
+      SPRING_PROFILES_ACTIVE: native
+      CONFIG_NATIVE_PATH: file:/etc/geoserver
+      JAVA_OPTS: -Xms64m -Xmx256m
+      RABBITMQ_USER: geoserver
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?}
+      SPRING_CLOUD_CONFIG_SERVER_OVERRIDES_PGCONFIG_HOST: geodatabase
+      SPRING_CLOUD_CONFIG_SERVER_OVERRIDES_PGCONFIG_PORT: 5432
+      SPRING_CLOUD_CONFIG_SERVER_OVERRIDES_PGCONFIG_DATABASE: geoserver
+      SPRING_CLOUD_CONFIG_SERVER_OVERRIDES_PGCONFIG_SCHEMA: pgconfig
+      SPRING_CLOUD_CONFIG_SERVER_OVERRIDES_PGCONFIG_USERNAME: geoserver
+      SPRING_CLOUD_CONFIG_SERVER_OVERRIDES_PGCONFIG_PASSWORD: ${POSTGRES_PASSWORD:?}
+      SPRING_CLOUD_CONFIG_SERVER_OVERRIDES_PGCONFIG_INITIALIZE: 'true'
+    depends_on:
+      rabbitmq: {condition: service_healthy}
+    networks: [backend]
+    healthcheck:
+      test: [CMD, curl, -fsS, http://localhost:8081/actuator/health]
+      interval: 5s
+      retries: 40
+  gateway:
+    image: docker.io/geoservercloud/geoserver-cloud-gateway:${CLOUD_TAG:?}
+    environment:
+      <<: *env
+      SPRING_PROFILES_ACTIVE: ''
+      JAVA_OPTS: -Xms64m -Xmx256m
+    depends_on:
+      config: {condition: service_healthy}
+      consul: {condition: service_healthy}
+    networks: [backend]
+    ports: ['127.0.0.1:${ENC_PORT:-18732}:8080']
+  rest:
+    <<: *service
+    image: localhost/enc-cloud-rest:${CLOUD_TAG:?}
+    environment:
+      <<: *env
+      JAVA_OPTS: -Xms128m -Xmx950m -Denc.installStyles=true
+  wms:
+    <<: *service
+    image: localhost/enc-cloud-wms:${CLOUD_TAG:?}
+  webui:
+    <<: *service
+    image: localhost/enc-cloud-webui:${CLOUD_TAG:?}
+  wfs:
+    <<: *service
+    image: localhost/enc-cloud-wfs:${CLOUD_TAG:?}
+  gwc:
+    <<: *service
+    image: localhost/enc-cloud-gwc:${CLOUD_TAG:?}
+volumes:
+  database:
+  rabbitdata:
+  cache:
+  resources:
+  tiles:
+networks:
+  backend:
+    internal: true

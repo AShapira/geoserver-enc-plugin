@@ -1,0 +1,48 @@
+:root { font: 14px system-ui, sans-serif; color: #dfeaf1; background: #10212c; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { height: 100dvh; margin: 0; display: flex; flex-direction: column; }
+header, footer { display: flex; align-items: center; gap: 12px; padding: 12px 20px; }
+header { flex-wrap: wrap; border-bottom: 1px solid #304653; }
+.brand { flex: 1 1 220px; }
+h1 { margin: 0; font-size: 21px; }
+h2 { margin: 0 0 12px; font-size: 17px; }
+small, footer { color: #a7bdca; }
+a { color: #9ed5ed; }
+label { display: grid; gap: 4px; max-width: 100%; }
+header label, form label, #layersPanel > label { color: #b8cbd6; font-size: 12px; }
+select, input[type=search], button.control {
+  min-width: 0; max-width: 100%; font: 14px system-ui, sans-serif; color: #edf4f6;
+  background: #203743; border: 1px solid #476371; border-radius: 4px; padding: 7px 10px;
+}
+select { max-width: min(22rem, 80vw); }
+button.control { cursor: pointer; }
+button.control.primary { background: #12556c; }
+button:disabled { opacity: .6; cursor: default; }
+:focus-visible { outline: 2px solid #ffbe40; outline-offset: 2px; }
+.chart { display: flex; flex: 1; min-height: 0; }
+#map { flex: 1; min-width: 0; min-height: 0; background: #d4eaee; }
+aside { width: 19rem; max-width: 100%; padding: 16px; overflow: auto; border-right: 1px solid #304653; }
+#layers h3 { font-size: 14px; margin: 1rem 0 .4rem; }
+#layers label { display: flex; align-items: baseline; gap: 6px; padding: 5px 0; overflow-wrap: anywhere; }
+#layers small, #results small { display: block; }
+#searchForm { display: grid; gap: 10px; }
+#searchStatus { font-size: 13px; }
+#results { list-style: none; margin: 0; padding: 0; }
+#results button {
+  width: 100%; padding: 9px 6px; text-align: left; font: inherit; color: inherit; cursor: pointer;
+  background: transparent; border: 0; border-top: 1px solid #304653; overflow-wrap: anywhere;
+}
+#results button:hover, #results button[aria-pressed=true] { background: #203d4c; }
+#results button[aria-pressed=true] { box-shadow: inset 3px 0 #ffbe40; }
+footer { min-height: 35px; padding: 6px 20px; font-size: 12px; }
+footer > span:last-child { margin-left: auto; }
+.ol-scale-line { background: #10212ccc; }
+.ol-control button { background: #203743; color: white; }
+@media (max-width: 700px) {
+  header { padding: 8px 12px; gap: 8px; }
+  .brand { flex-basis: 100%; }
+  .chart { flex-direction: column; }
+  aside { width: 100%; max-height: 45%; border: 0; border-bottom: 1px solid #304653; }
+  footer { padding-inline: 8px; font-size: 11px; }
+}

@@ -2,4 +2,19 @@
 <beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd">
   <bean id="encCatalogueScaleCallback" class="org.enc.geoserver.CatalogueScaleCallback"/>
   <bean id="encStyleLibraryInstaller" class="org.enc.geoserver.StyleLibraryInstaller"/>
+  <bean id="encCapabilities" class="org.enc.geoserver.EncCapabilities">
+    <constructor-arg ref="catalog"/>
+  </bean>
+  <bean id="encViewerMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+    <property name="order" value="-60"/>
+    <property name="patternParser"><null/></property>
+    <property name="alwaysUseFullPath" value="true"/>
+    <property name="mappings">
+      <props>
+        <prop key="/enc/viewer/index.html">classpathPublisher</prop>
+        <prop key="/enc/viewer/viewer.css">classpathPublisher</prop>
+        <prop key="/enc/viewer/viewer.js">classpathPublisher</prop>
+      </props>
+    </property>
+  </bean>
 </beans>

@@ -41,8 +41,8 @@ Two live regressions were found during this work: missing scale propagation sele
 
 ```bash
 container/demo.sh
-podman exec geoserver-enc python3 /opt/enc/scripts/catalogue_smoke.py \
-  --url http://127.0.0.1:8080/geoserver --out /tmp/enc-smoke
+container/operator.sh python3 /opt/enc/scripts/catalogue_smoke.py \
+  --url http://127.0.0.1:8080/geoserver --out /opt/enc-cache/enc-smoke
 ```
 
 For native Java tests, use `S57_TEST_FILE` for the US5NY1AI base plus update, `S57_CATALOGUE` for the prepared inventory, and `OGR2OGR` for the tested executable. Without these data settings the corresponding integration tests are skipped. PNG evidence, browser screenshots and execution logs remain under local `evidence/catalogue/` and `.runtime/`.

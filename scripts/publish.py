@@ -80,9 +80,10 @@ def publish_catalogue(directory, workspace, title, profile, index=None, cache=No
     records = json.loads(registry.read_text()) if registry.exists() else {}
     args=SimpleNamespace(cell=None,catalogue=index,workspace=workspace,title=title,cache=cache,
         ogr2ogr=ogr or Path('/opt/enc/scripts/ogr_inland.py'),data_dir=data_dir,
-        url='http://127.0.0.1:8080/geoserver',user=os.environ.get('GEOSERVER_USER') or 'admin',
+        url=os.environ.get('GEOSERVER_URL', 'http://127.0.0.1:8080/geoserver'),user=os.environ.get('GEOSERVER_USER') or 'admin',
         password=os.environ.get('GEOSERVER_PASSWORD') or 'geoserver',shallow=2,safety=5,deep=10,update=True,all_palettes=True)
     server=Server(args.url,args.user,args.password)
+    args.attribution = profile.get('attribution', '')
     args.library = installed_library(server)
     store='/rest/workspaces/'+workspace+'/datastores/chart.json'
     current_index = None
@@ -104,6 +105,7 @@ def publish_catalogue(directory, workspace, title, profile, index=None, cache=No
             generation = db.execute("SELECT value FROM metadata WHERE key='archive_sha256'").fetchone()[0]
     if (previous.get('generation') == generation and previous.get('title') == title
             and current_index == str(index) and previous.get('view') == profile.get('view',previous.get('view'))
+            and previous.get('wms_attribution') == args.attribution
             and previous.get('depths') == [args.shallow,args.safety,args.deep]
             and previous.get('library_revision') == args.library['revision'] and not (directory/'.publishing').exists()
             and all(server.exists('/rest/workspaces/'+workspace+'/layergroups/chart_'+p+'.json')
@@ -121,7 +123,7 @@ def publish_catalogue(directory, workspace, title, profile, index=None, cache=No
     bbox=result['preview_bbox']
     view=profile.get('view') or [(bbox[0]+bbox[2])/2,(bbox[1]+bbox[3])/2,16]
     records[workspace]={'title':title,'product':profile.get('product','S-57 ENC'),
-        'attribution':profile.get('attribution',''),'source':profile.get('source',''),
+        'attribution':args.attribution,'wms_attribution':args.attribution,'source':profile.get('source',''),
         'view':view,'bbox':result['bbox'],'cells':result['active_cells'],'depths':[args.shallow,args.safety,args.deep],'generation':generation,'library_revision':args.library['revision']}
     temp=registry.with_suffix('.tmp')
     temp.write_text(json.dumps(records,indent=2,ensure_ascii=False)+'\n')
@@ -168,6 +170,7 @@ def publish(a):
         gpkg=snapshot_path(a.cell,a.cache,a.ogr2ogr)
         if not gpkg.is_file(): raise RuntimeError('Plugin did not create the expected snapshot: '+str(gpkg))
         manifest=generate(gpkg,a.styles,a.palette,a.shallow,a.safety,a.deep,library=library)
+    attribution = {'attribution': {'title': a.attribution}} if getattr(a, 'attribution', '') else {}
     for cls,info in manifest['layers'].items():
         ft=store+'/featuretypes/'+cls
         exists=server.exists(ft+'.json')
@@ -175,10 +178,10 @@ def publish(a):
                 'srs':'EPSG:4326','projectionPolicy':'FORCE_DECLARED','enabled':True,
                 'nativeBoundingBox':{'minx':manifest['bbox'][0],'miny':manifest['bbox'][1],'maxx':manifest['bbox'][2],'maxy':manifest['bbox'][3],'crs':'EPSG:4326'},
                 'latLonBoundingBox':{'minx':manifest['bbox'][0],'miny':manifest['bbox'][1],'maxx':manifest['bbox'][2],'maxy':manifest['bbox'][3],'crs':'EPSG:4326'}}})
-        server.request('PUT',f'/rest/layers/{a.workspace}:{cls}',{'layer':{'defaultStyle':{'name':info["style"]},'enabled':True}})
+        server.request('PUT',f'/rest/layers/{a.workspace}:{cls}',{'layer':{'defaultStyle':{'name':info["style"]},'enabled':True, **attribution}})
     name='chart_'+a.palette
     stack=manifest['stack']; x1,y1,x2,y2=manifest['bbox']
-    group={'layerGroup':{'name':name,'mode':'SINGLE','title':f'{title} ENC ({a.palette})',
+    group={'layerGroup':{'name':name,'mode':'SINGLE',**attribution,'title':f'{title} ENC ({a.palette})',
         'abstractTxt':'GDAL S-57 with S-52-derived portrayal. Experimental; see portrayal limitations.',
         'publishables':{'published':[{'@type':'layer','name':f'{a.workspace}:{e["class"]}'} for e in stack]},
         'styles':{'style':[{'name':e["style"]} for e in stack]},

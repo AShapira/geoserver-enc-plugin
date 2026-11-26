@@ -48,14 +48,14 @@ def stage(source, workspace, workers):
                 out.rename(target)
         converter = SCRIPT/'ogr_inland.py'
         cache = target/'cache'
-        jar = next(Path('/usr/local/tomcat/webapps/geoserver/WEB-INF/lib').glob('gs-s57-*.jar'))
+        jar = Path('/opt/enc/s57/gs-s57.jar')
         stamp = target/'.validated'
         recipe = hashlib.sha256(jar.read_bytes()+subprocess.check_output([str(converter),'--version'])).hexdigest()
         if not stamp.exists() or stamp.read_text() != recipe:
             index = target/'catalogue.sqlite'
             warm(index,cache,converter,workers)
             with (target/'edge-report.log').open('w') as report:
-                result = subprocess.run(['java','-Xmx1g','-cp',str(jar.parent/'*'),
+                result = subprocess.run(['java','-Xmx1g','-cp',str(jar) + ':/usr/local/tomcat/webapps/geoserver/WEB-INF/lib/*',
                     'org.enc.geoserver.EdgeCache',str(index),str(cache),str(converter),str(workers)],
                     stdout=report,stderr=subprocess.STDOUT)
             if result.returncode:

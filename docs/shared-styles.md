@@ -14,7 +14,7 @@ After upgrade, existing layer and group assignments continue to resolve. Republi
 
 ## GeoServer Cloud
 
-Mount the compatible plugin JAR in `/opt/additional_libs` on each GeoServer service using the store or portrayal. Provide GeoPackage dependencies, native GDAL, and identical mounted chart and cache paths in each process that opens the datastore. Use one catalogue writer (for example the REST service) with `-Denc.installStyles=true` and set `-Denc.installStyles=false` on the remaining services. The writer and renderers must see the same catalogue and style resource store.
+Build the release-matched plugin into each service that uses the store or portrayal. Cloud 3.0.2 additionally accepts external JARs in `/opt/additional_libs`. Cloud 3.0.0 uses the built-in service classpath. See the [Cloud integration and verification guide](../cloud/README.md). Provide GeoPackage dependencies, native GDAL, and identical mounted chart and cache paths in each process that opens the datastore. Use one catalogue writer (for example the REST service) with `-Denc.installStyles=true` and set `-Denc.installStyles=false` on the remaining services. The writer and renderers must see the same catalogue and style resource store.
 
 ## Validation on 2026-11-23
 

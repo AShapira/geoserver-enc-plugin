@@ -1,0 +1,233 @@
+{
+  "date": "2026-11-26",
+  "engine": "podman version 5.8.2",
+  "chart": "NOAA US5NY1AI.000 with US5NY1AI.001",
+  "plugin_version": "0.4.0",
+  "cloud": {
+    "3.0.0": {
+      "distribution": "release-matched BOOT-INF/lib service images, pgconfig",
+      "gdal": "GDAL 3.12.2 \"Chicoutimi\", released 2026/02/03",
+      "services": {
+        "rest": {
+          "image": "d45ea5a9d4efcdd3e96dfe8971b1de6a61c4d535d68fb26aa087e9bf543da8e3",
+          "plugin_sha256": "a7e6b449f93e13c5998bb37e8efe96815e2fa9beca4ceb036511f44123b3af13"
+        },
+        "webui": {
+          "image": "c373685fc703008c5acfe8796fd07c61076a11e1c66690b356cb4c9339f0df26",
+          "plugin_sha256": "a7e6b449f93e13c5998bb37e8efe96815e2fa9beca4ceb036511f44123b3af13"
+        },
+        "wfs": {
+          "image": "dd9e3cfc7c464487e82671ffa9af22af9495794db7505a263953ea82bcd6d956",
+          "plugin_sha256": "a7e6b449f93e13c5998bb37e8efe96815e2fa9beca4ceb036511f44123b3af13"
+        },
+        "wms": {
+          "image": "dfddd45edccc42bff7e4b18fde45132792cf88b669142bb241c52fbc627225bc",
+          "plugin_sha256": "a7e6b449f93e13c5998bb37e8efe96815e2fa9beca4ceb036511f44123b3af13"
+        },
+        "gwc": {
+          "image": "6a5688c6c859672747c40885fbd34623181ecffdec2086e71f07e5a3b0b2055d",
+          "plugin_sha256": "a7e6b449f93e13c5998bb37e8efe96815e2fa9beca4ceb036511f44123b3af13"
+        }
+      },
+      "update_numbers_read_from_snapshots": [
+        1
+      ],
+      "styles_after_writer_restart": 1530,
+      "webui_store_discovered": true,
+      "wfs_feature_count": 2,
+      "matching_wms_replicas": 2,
+      "wms_sha256_before_and_after_restart": "cdfb29aee062fdd67242f3fec024f80ed8d47ce7bd83403d6bc3c5c1332919af",
+      "wmts_sha256": "b5efcbc1e2ff1a63397dcc8a032b914e5baf3e6f48fdc08221abd74ead9bb152",
+      "wmts_first_then_repeat": [
+        "MISS",
+        "HIT"
+      ],
+      "upstream_maven_module": {
+        "artifact": "gs-cloud-extension-s57-3.0.0.jar",
+        "sha256": "6cdea824d463d802c41d0568540277ddfc5c585f0d5c6a79ab02358ab5fc35b9",
+        "build": "JDK 25, release-matched patched GeoServer source"
+      }
+    },
+    "3.0.2": {
+      "distribution": "release-matched BOOT-INF/lib service images, pgconfig",
+      "gdal": "GDAL 3.12.2 \"Chicoutimi\", released 2026/02/03",
+      "services": {
+        "rest": {
+          "image": "70edd2112ad6b2af1003f99f67ea10791546365f95262bc858d20c8f356794f8",
+          "plugin_sha256": "485eb88ecdfc4eb955a2bf7816ff22f337451dc63eac6a9fefa29940b6c2e044"
+        },
+        "webui": {
+          "image": "9957cac1a73560ab36e0d55090845861c38bff285002e0903eaf24caf7ae502c",
+          "plugin_sha256": "485eb88ecdfc4eb955a2bf7816ff22f337451dc63eac6a9fefa29940b6c2e044"
+        },
+        "wfs": {
+          "image": "c4cb8d383666ce8ecb2d8bda1fbc6ec894070e5346a201d9af1ea7315523a164",
+          "plugin_sha256": "485eb88ecdfc4eb955a2bf7816ff22f337451dc63eac6a9fefa29940b6c2e044"
+        },
+        "wms": {
+          "image": "a9e5eec1acff26a47d9ae94959b64007a24fb0173a298071388791acdf6eb684",
+          "plugin_sha256": "485eb88ecdfc4eb955a2bf7816ff22f337451dc63eac6a9fefa29940b6c2e044"
+        },
+        "gwc": {
+          "image": "f01fee69f43dd4703c748511afe220ae33782ce7b6c3ed061927487d0be1df68",
+          "plugin_sha256": "485eb88ecdfc4eb955a2bf7816ff22f337451dc63eac6a9fefa29940b6c2e044"
+        }
+      },
+      "update_numbers_read_from_snapshots": [
+        1
+      ],
+      "styles_after_writer_restart": 1530,
+      "webui_store_discovered": true,
+      "wfs_feature_count": 2,
+      "matching_wms_replicas": 2,
+      "wms_sha256_before_and_after_restart": "cdfb29aee062fdd67242f3fec024f80ed8d47ce7bd83403d6bc3c5c1332919af",
+      "wmts_sha256": "c509cec6ab6090e41f4256cc6ee46eeb2732f23bf5b1dd5c7b6f7db389cf3a0a",
+      "wmts_first_then_repeat": [
+        "MISS",
+        "HIT"
+      ],
+      "upstream_maven_module": {
+        "artifact": "gs-cloud-extension-s57-3.0.2.jar",
+        "sha256": "9320ae2465085510d635f437e071e4248d5d9d624dc41eab7a168291fa04ce8f",
+        "build": "JDK 25, release-matched patched GeoServer source"
+      }
+    }
+  },
+  "standalone": {
+    "2.28.0": {
+      "image": "docker.io/kartoza/geoserver:2.28.0",
+      "vendor_image_digest": "sha256:f8960f8f3be5f7c41bc62e292513aff267c00cbe39fb900426ba93c7c4bc2d15",
+      "plugin_zip_sha256": "c0304e59b1735694d5d340e893c42f008daca6b68a0c878e2004b7135adee695",
+      "gdal": "GDAL 3.8.4, released 2024/02/08",
+      "applied_update": 1,
+      "webui_store_discovered": true,
+      "wfs_feature_count": 2,
+      "styles_after_container_recreation": 1530,
+      "wms_sha256": "cdfb29aee062fdd67242f3fec024f80ed8d47ce7bd83403d6bc3c5c1332919af",
+      "wmts_sha256": "b5efcbc1e2ff1a63397dcc8a032b914e5baf3e6f48fdc08221abd74ead9bb152",
+      "wmts_first_then_repeat": [
+        "MISS",
+        "HIT"
+      ],
+      "installed_jar_sha256": "ffc466e80c31cf307614de71843ee59fb537cace914eef35c8ff95b78e3956f5"
+    },
+    "3.0.2": {
+      "image": "docker.osgeo.org/geoserver:3.0.2-gdal",
+      "vendor_image_digest": "sha256:a24c30d30d1732f8ce7ce9156760da5fa6135ca97e6b27de0b1b9e0c71e25410",
+      "plugin_zip_sha256": "6de854e6e02821a2be2d324cdaed72938b5b20b13650470a7d7603b2e9a7090b",
+      "gdal": "GDAL 3.12.2 \"Chicoutimi\", released 2026/02/03",
+      "applied_update": 1,
+      "webui_store_discovered": true,
+      "wfs_feature_count": 2,
+      "styles_after_container_recreation": 1530,
+      "wms_sha256": "cdfb29aee062fdd67242f3fec024f80ed8d47ce7bd83403d6bc3c5c1332919af",
+      "wmts_sha256": "b5efcbc1e2ff1a63397dcc8a032b914e5baf3e6f48fdc08221abd74ead9bb152",
+      "wmts_first_then_repeat": [
+        "MISS",
+        "HIT"
+      ],
+      "installed_jar_sha256": "1f96ae7d0c60abb9f174dafa3120fb993f63ee123ab89a39c2986868953c2818"
+    }
+  },
+  "standalone_build": {
+    "gdal": "3.13.3",
+    "java_tests_per_target": 29,
+    "skipped": 0,
+    "python_tests": 21
+  },
+  "offline_inland": {
+    "cell": "U37OH001",
+    "palettes": [
+      "day",
+      "dusk",
+      "night"
+    ],
+    "chart_viewer_http": 200,
+    "geoPackage_and_edge_cache_mtimes_preserved": true
+  },
+  "offline_noaa_demo": {
+    "cells": [
+      "US2ATLPC",
+      "US2PACUY"
+    ],
+    "source_features": 3989,
+    "import_failures": 0,
+    "edge_failures": 0,
+    "seeded_regions": [
+      "new-york",
+      "san-francisco"
+    ],
+    "palettes": [
+      "day",
+      "dusk",
+      "night"
+    ]
+  },
+  "airgap_rebuild": {
+    "clean_image_store_imported": [
+      "stock",
+      "operator",
+      "builder"
+    ],
+    "network": "none",
+    "both_release_zip_files_byte_identical": true
+  },
+  "packaged_viewer": {
+    "date": "2026-11-26",
+    "viewer_path": "/enc/viewer/index.html",
+    "non_noaa_cell": "1R7587XI.000",
+    "browser": "Chromium with outbound browser requests limited to the GeoServer origin",
+    "scenarios": [
+      "clean installation without source registry or HTML mount",
+      "empty catalogue and retry after failed WMS discovery",
+      "manually renamed LIGHTS layer and search result highlight",
+      "second S-57 store in the same workspace",
+      "custom ENC group served over WMTS with a WMS-only overlay",
+      "individual layer on a blank base",
+      "unrelated store and mixed group excluded",
+      "per-user layer visibility",
+      "day, dusk and night group selection"
+    ],
+    "checks": {
+      "GeoServer 2.28.0": {
+        "artifact": "geoserver-2.28.0-s57-plugin.zip",
+        "sha256": "c204b402bb223f1263b6c32b1e6c3a7baab9c43e9b20871da0a4ab215a0d43b8"
+      },
+      "GeoServer 3.0.2": {
+        "artifact": "geoserver-3.0.2-s57-plugin.zip",
+        "sha256": "755112f705d6ed11ae927b7316ba0735c8008d2f263b09b88fbcf6277e32ecf2"
+      },
+      "GeoServer Cloud 3.0.0": {
+        "artifact": "gs-cloud-extension-s57-3.0.0.jar",
+        "sha256": "a586149369ded4d5747e865606135d9a358e8b24cc6316e695a6e79d9e39201f",
+        "tested_wms_image": "31a3f5ac4f8ade17d081228d59deb24196dab91e25fd8776ca553f2abaf5f087"
+      },
+      "GeoServer Cloud 3.0.2": {
+        "artifact": "gs-cloud-extension-s57-3.0.2.jar",
+        "sha256": "13e1ec314da1e7bc2a07f9ee235ea6c62b87dc6c2803f9a76b805889761aa020",
+        "tested_wms_image": "8f02ec2721e55294ad02f6c7c6658bc742d6c7729fdb674af59b5cf3c4b424ab"
+      }
+    },
+    "noaa_regression": {
+      "cells": [
+        "US2ATLPC",
+        "US2PACUY"
+      ],
+      "published_attribution": "NOAA Office of Coast Survey",
+      "distinct_wms_and_wmts_palettes": [
+        "day",
+        "dusk",
+        "night"
+      ],
+      "repeat_tile": "HIT"
+    }
+  },
+  "standalone_release_build": {
+    "plugin_version": "0.5.0",
+    "verified": "Rebuilt and ran 29 Java tests per target. The JAR contents match the browser-tested builds apart from Maven project metadata.",
+    "sha256": {
+      "geoserver-2.28.0-s57-plugin.zip": "66502bf9e06ab2a508ea3ebcf32e58bbd43a2e55c983055c2c142f22eedef236",
+      "geoserver-3.0.2-s57-plugin.zip": "ac0ce97bae68e7bbff0709e13bf2216e4d8fc0ec1752d5397b34db8d8efec6c5"
+    }
+  }
+}

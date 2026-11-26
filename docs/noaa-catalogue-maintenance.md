@@ -34,8 +34,9 @@ These settings are also used by the update procedure:
 ```bash
 set -euo pipefail
 export ENC_ENGINE=podman
+export CONTAINER_ENGINE=$ENC_ENGINE
 export ENC_CONTAINER=geoserver-enc
-export ENC_IMAGE=localhost/geoserver-enc:catalogue
+export ENC_IMAGE=localhost/enc-operator:3.0.2
 export GEOSERVER_USER=admin
 export GEOSERVER_PASSWORD=geoserver  # Default only for this local demo.
 export ENC_CATALOGUE_VOLUME=geoserver-enc-catalogue
@@ -52,21 +53,7 @@ For a server with changed credentials, replace the password assignment with
 The password is passed through the environment, not a publisher command-line
 argument. The examples assume the plugin owns the `noaa` workspace.
 
-For a **fresh manual installation only**, build the image and create the volumes:
-
-```bash
-"$ENC_ENGINE" build --format docker -f container/Dockerfile -t "$ENC_IMAGE" .
-for enc_volume in "$ENC_CATALOGUE_VOLUME" "$ENC_CACHE_VOLUME" "$ENC_CONFIG_VOLUME"; do
-  "$ENC_ENGINE" volume inspect "$enc_volume" >/dev/null 2>&1 ||
-    "$ENC_ENGINE" volume create "$enc_volume"
-done
-```
-
-For Docker, set `ENC_ENGINE=docker` and omit `--format docker` from the build.
-[The Dockerfile](../container/Dockerfile) extends
-`docker.osgeo.org/geoserver:3.0.2`, compiles against its own GeoServer/GeoTools
-libraries, adds the plugin JAR to `WEB-INF/lib`, and installs GDAL and the
-publication tools. No replacement GeoTools libraries or GDAL JNI bridge are used.
+For a fresh manual installation create the stock server and its persistent volumes with `container/demo.sh --empty`. The full automated download and publication workflow is `container/demo.sh`. The following manual steps operate on the same volumes using the operator image.
 
 | Volume | Container path | Purpose and server access |
 | --- | --- | --- |
@@ -151,54 +138,25 @@ GeoPackages.
 
 ## 3. Start GeoServer with the plugin
 
-For a **fresh manual installation only**, create the server:
-
-```bash
-"$ENC_ENGINE" run -d --name "$ENC_CONTAINER" \
-  --label org.enc.project=geoserver-enc-plugin --restart unless-stopped \
-  --memory 6g -p 127.0.0.1:18080:8080 \
-  --volume "$ENC_CONFIG_VOLUME:/opt/geoserver_data" \
-  --volume "$ENC_CATALOGUE_VOLUME:/opt/enc-data:ro" \
-  --volume "$ENC_CACHE_VOLUME:/opt/enc-cache" "$ENC_IMAGE"
-
-enc_ready=false
-for ((enc_attempt=0; enc_attempt<120; enc_attempt++)); do
-  if "$ENC_ENGINE" exec "$ENC_CONTAINER" curl -fsS \
-    'http://127.0.0.1:8080/geoserver/ows?service=WMS&request=GetCapabilities&version=1.3.0' \
-    >/dev/null 2>&1; then
-    enc_ready=true
-    break
-  fi
-  sleep 1
-done
-[[ "$enc_ready" == true ]]
-```
-
-The external URL is `http://127.0.0.1:18080/geoserver`; commands inside this
-container use `http://127.0.0.1:8080/geoserver`. A successful capabilities response
-means the server is ready, not that the ENC layers have been published yet.
+The launcher in step 1 has already started the server with the plugin ZIP mounted. Confirm readiness with `container/operator.sh curl -fsS 'http://127.0.0.1:8080/geoserver/ows?service=WMS&request=GetCapabilities'`.
 
 ## 4. Precompute GeoPackages and shared-edge metadata
 
-Define the helper below, then run it. It uses the same image and absolute source
+Define the helper below, then run it. It uses the matching operator image and the same absolute source
 paths as GeoServer so the cache fingerprints match. Preparation can run while
 the existing catalogue continues serving; it consumes additional CPU, RAM and
 disk. Reduce worker counts/resource limits if necessary.
 
 ```bash
 prewarm_catalogue() {
-  "$ENC_ENGINE" run --rm --memory 6g --cpus 4 \
-    --volume "$ENC_CATALOGUE_VOLUME:/opt/enc-data:ro" \
-    --volume "$ENC_CACHE_VOLUME:/opt/enc-cache" \
-    -e "ENC_INDEX=$ENC_INDEX" -e "ENC_REPORT=$ENC_REPORT" \
-    --entrypoint /bin/bash "$ENC_IMAGE" -ceu '
+  container/operator.sh /bin/bash -ceu '
       set -o pipefail
       mkdir -p "$ENC_REPORT"
       python3 /opt/enc/scripts/warm_catalogue.py \
         --catalogue "$ENC_INDEX" --cache /opt/enc-cache \
         --ogr2ogr /usr/bin/ogr2ogr --workers 4
       cp /opt/enc-cache/warm-report.json "$ENC_REPORT/warm-report.json"
-      java -Xmx2g -cp "/usr/local/tomcat/webapps/geoserver/WEB-INF/lib/*" \
+      java -Xmx2g -cp "/opt/enc/s57/gs-s57.jar:/usr/local/tomcat/webapps/geoserver/WEB-INF/lib/*" \
         org.enc.geoserver.EdgeCache "$ENC_INDEX" /opt/enc-cache /usr/bin/ogr2ogr 4 \
         | tee "$ENC_REPORT/edge-build.log"
       python3 /opt/enc/scripts/audit_edges.py \
@@ -235,7 +193,7 @@ and keeps generated manifests, SLDs and publication URLs in the reports volume.
 ```bash
 publish_catalogue() {
   for enc_palette in day dusk night; do
-    "$ENC_ENGINE" exec -e GEOSERVER_USER -e GEOSERVER_PASSWORD "$ENC_CONTAINER" \
+    container/operator.sh \
       python3 /opt/enc/scripts/publish.py \
       --catalogue "$ENC_INDEX" --url http://127.0.0.1:8080/geoserver \
       --workspace noaa --data-dir /opt/geoserver_data \
@@ -316,8 +274,7 @@ without cancelling jobs.
 
 ```bash
 wait_for_chart_jobs() {
-  "$ENC_ENGINE" exec -i -e GEOSERVER_USER -e GEOSERVER_PASSWORD \
-    "$ENC_CONTAINER" python3 - <<'PY'
+  container/operator.sh python3 - <<'PY'
 import json, os, sys, time
 sys.path.insert(0, "/opt/enc/scripts")
 from publish import Server
@@ -352,7 +309,7 @@ wait_for_chart_jobs
 Configure the dedicated demo and seed its bounded New York/San Francisco plan:
 
 ```bash
-"$ENC_ENGINE" exec -e GEOSERVER_USER -e GEOSERVER_PASSWORD "$ENC_CONTAINER" \
+container/operator.sh \
   python3 /opt/enc/scripts/tune_cache.py \
   --url http://127.0.0.1:8080/geoserver --apply --seed \
   --quota-gib 2 --regions new-york san-francisco --palettes day dusk night \
@@ -374,11 +331,10 @@ Run the regional WMS, axis-order and all-palette WMTS smoke checks and retain
 their PNGs and JSON results:
 
 ```bash
-"$ENC_ENGINE" exec "$ENC_CONTAINER" python3 /opt/enc/scripts/catalogue_smoke.py \
+container/operator.sh python3 /opt/enc/scripts/catalogue_smoke.py \
   --url http://127.0.0.1:8080/geoserver --out "$ENC_REPORT/smoke"
 
-"$ENC_ENGINE" exec -i -e GEOSERVER_USER -e GEOSERVER_PASSWORD \
-  -e "ENC_INDEX=$ENC_INDEX" "$ENC_CONTAINER" python3 - <<'PY'
+container/operator.sh python3 - <<'PY'
 import json, os, sys
 sys.path.insert(0, "/opt/enc/scripts")
 from publish import Server
@@ -399,7 +355,7 @@ counts depend on the NOAA snapshot and compiler revision; do not hardcode the
 historical 7,114-cell count as an acceptance test.
 
 Open [GeoServer](http://localhost:18080/geoserver/web/) and the
-[viewer](http://localhost:18080/enc.html). In GeoServer, inspect **Stores → chart**,
+[viewer](http://localhost:18080/geoserver/enc/viewer/index.html). In GeoServer, inspect **Stores → chart**,
 **Styles**, **Layers**, **Layer Groups → chart_day/dusk/night** and
 **Tile Caching → Tile Layers**. The public service endpoints are:
 
@@ -440,21 +396,19 @@ ENC_CACHE_VOLUME=$(enc_volume_at /opt/enc-cache)
 ENC_CONFIG_VOLUME=$(enc_volume_at /opt/geoserver_data)
 ```
 
-Use the existing server's exact image, choose a unique generation name and save
+Use the existing server's matching operator image, choose a unique generation name and save
 the current store and group configuration. The old index path is read from the
 live store, not assumed to be the original default:
 
 ```bash
-ENC_IMAGE=$("$ENC_ENGINE" inspect --format '{{.Image}}' "$ENC_CONTAINER")
+ENC_IMAGE=$("$ENC_ENGINE" inspect --format '{{index .Config.Labels "org.enc.operator"}}'  "$ENC_CONTAINER")
 export ENC_IMAGE
 export ENC_RUN="noaa-$(date -u +%Y%m%dT%H%M%SZ)"
 export ENC_REPORT="/opt/enc-cache/reports/$ENC_RUN"
 export ENC_INDEX="/opt/enc-data/generations/$ENC_RUN/catalogue.sqlite"
 
 wait_for_chart_jobs
-"$ENC_ENGINE" exec -i -e GEOSERVER_USER -e GEOSERVER_PASSWORD \
-  -e "ENC_REPORT=$ENC_REPORT" -e "ENC_SAFETY=$ENC_SAFETY" \
-  "$ENC_CONTAINER" python3 - <<'PY'
+container/operator.sh python3 - <<'PY'
 import json, os, sys
 from pathlib import Path
 sys.path.insert(0, "/opt/enc/scripts")
@@ -516,11 +470,11 @@ During the maintenance window, run:
 ```bash
 publish_catalogue
 wait_for_chart_jobs
-"$ENC_ENGINE" exec -e GEOSERVER_USER -e GEOSERVER_PASSWORD "$ENC_CONTAINER" \
+container/operator.sh \
   python3 /opt/enc/scripts/tune_cache.py \
   --url http://127.0.0.1:8080/geoserver --apply --seed \
   --report "$ENC_REPORT/tuning-report.json"
-"$ENC_ENGINE" exec "$ENC_CONTAINER" python3 /opt/enc/scripts/catalogue_smoke.py \
+container/operator.sh python3 /opt/enc/scripts/catalogue_smoke.py \
   --url http://127.0.0.1:8080/geoserver --out "$ENC_REPORT/smoke"
 "$ENC_ENGINE" exec "$ENC_CONTAINER" /bin/bash -ceu \
   'printf "%s\n" "$1" > "$2/published-catalogue.txt"' \
@@ -559,11 +513,11 @@ export ENC_INDEX="$ENC_PREVIOUS_INDEX"
 export ENC_REPORT="${ENC_REPORT}-rollback-$(date -u +%Y%m%dT%H%M%SZ)"
 publish_catalogue
 wait_for_chart_jobs
-"$ENC_ENGINE" exec -e GEOSERVER_USER -e GEOSERVER_PASSWORD "$ENC_CONTAINER" \
+container/operator.sh \
   python3 /opt/enc/scripts/tune_cache.py \
   --url http://127.0.0.1:8080/geoserver --apply --seed \
   --report "$ENC_REPORT/tuning-report.json"
-"$ENC_ENGINE" exec "$ENC_CONTAINER" python3 /opt/enc/scripts/catalogue_smoke.py \
+container/operator.sh python3 /opt/enc/scripts/catalogue_smoke.py \
   --url http://127.0.0.1:8080/geoserver --out "$ENC_REPORT/smoke"
 ```
 

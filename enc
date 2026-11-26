@@ -22,7 +22,7 @@ deploy = commands.add_parser('deploy')
 deploy.add_argument('directory', type=Path)
 deploy.add_argument('--workspace', required=True)
 deploy.add_argument('--title')
-deploy.add_argument('--view', nargs=3, type=float, metavar=('LONGITUDE','LATITUDE','ZOOM'), help='opening map position and integer Web Mercator zoom')
+deploy.add_argument('--view', nargs=3, type=float, metavar=('LONGITUDE','LATITUDE','ZOOM'), help='rendering check location and integer Web Mercator zoom')
 deploy.add_argument('--container', default=os.environ.get('ENC_CONTAINER','geoserver-enc'))
 deploy.add_argument('--workers', default=4, type=int)
 a = parser.parse_args()
@@ -41,11 +41,12 @@ else:
         parser.error('Supply an extracted exchange directory')
     engine = os.environ.get('CONTAINER_ENGINE','podman')
     info, = json.loads(subprocess.check_output([engine,'inspect',a.container]))
-    mount, = [m for m in info['Mounts'] if m['Destination'] == '/opt/enc-cache' and m['RW']]
-    cache = mount.get('Name') if mount['Type']=='volume' else mount['Source']
+    operator = info['Config'].get('Labels', {}).get('org.enc.operator')
+    if not operator:
+        parser.error('Recreate the ENC server with container/demo.sh to configure its operator image')
     common = ['python3','/opt/enc/scripts/deployment.py']
-    command = [engine,'run','--rm','--pull=never','--network','none','--volume',f'{source}:/input:ro',
-        '--volume',f'{cache}:/opt/enc-cache','--entrypoint',common[0],info['Image'],common[1],
+    command = [engine,'run','--rm','--pull=never','--network','none','--volumes-from',a.container,
+        '--volume',f'{source}:/input:ro','--entrypoint',common[0],operator,common[1],
         'stage','/input',a.workspace,str(a.workers)]
     generation = None
     with subprocess.Popen(command, stdout=subprocess.PIPE, text=True) as child:
@@ -55,5 +56,6 @@ else:
                 generation = line.strip().split('=')[1]
         if child.wait() or generation is None:
             sys.exit('Exchange staging failed')
-    subprocess.run([engine,'exec','-e','GEOSERVER_USER','-e','GEOSERVER_PASSWORD',a.container,*common,
-        'publish',a.workspace,generation,a.title or '',json.dumps(a.view)],check=True)
+    operator_script = Path(__file__).resolve().parent / 'container/operator.sh'
+    subprocess.run([operator_script,*common,'publish',a.workspace,generation,a.title or '',json.dumps(a.view)],
+                   env={**os.environ, 'ENC_CONTAINER': a.container}, check=True)

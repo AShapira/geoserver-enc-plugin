@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ENC viewer and search demo</title>
+<link rel="stylesheet" href="../../openlayers3/ol.css"><link rel="stylesheet" href="viewer.css">
+<script defer src="../../openlayers3/ol.js"></script><script defer src="viewer.js"></script>
+</head><body>
+<header>
+  <div class="brand"><h1>ENC viewer and search demo</h1><small id="credit"></small></div>
+  <label>Chart<select id="chart" disabled><option value="">No base chart</option></select></label>
+  <label id="paletteLabel" hidden>Palette<select id="palette"></select></label>
+  <label>Service<select id="service"><option value="auto">WMTS where available</option><option value="wms">WMS</option></select></label>
+  <button id="layerToggle" disabled class="control" aria-expanded="false" aria-controls="layersPanel">Layers</button>
+  <button id="searchToggle" disabled class="control" aria-expanded="false" aria-controls="searchPanel">Search objects</button>
+</header>
+<main class="chart">
+<aside id="layersPanel" hidden><h2>ENC layers</h2>
+  <label>Filter layers<input type="search" id="filter"></label><div id="layers"></div>
+</aside>
+<aside id="searchPanel" aria-labelledby="searchHeading" hidden>
+  <h2 id="searchHeading">Search this map area</h2>
+  <form id="searchForm">
+    <label>Object type<select id="objectType" required disabled></select></label>
+    <label>Name (optional)<input id="objectName" type="search" placeholder="Full or partial name"></label>
+    <div><button id="findObjects" class="control primary" disabled>Search</button>
+    <button id="clearSearch" class="control" type="button">Clear</button></div>
+  </form>
+  <p id="searchStatus" role="status"></p>
+  <ul id="results" aria-label="Matching objects"></ul>
+</aside>
+<div id="map" aria-label="Interactive nautical chart"></div>
+</main>
+<footer><span role="status" id="status">Discovering published charts…</span><button class="control" id="retry" hidden>Retry</button>
+<span>Experimental portrayal · <a href="../../">GeoServer</a></span></footer>
+</body></html>

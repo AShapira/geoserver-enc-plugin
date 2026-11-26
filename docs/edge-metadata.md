@@ -37,11 +37,11 @@ Ownership follows the conditional procedures implemented by this compiler, inclu
 ## Operations
 
 ```bash
-# Inside the deployed container; four independent GDAL worker processes.
-java -Xmx2g -cp '/usr/local/tomcat/webapps/geoserver/WEB-INF/lib/*' \
+# Run from the checkout or extracted kit.
+container/operator.sh java -Xmx2g -cp '/opt/enc/s57/gs-s57.jar:/usr/local/tomcat/webapps/geoserver/WEB-INF/lib/*' \
   org.enc.geoserver.EdgeCache /opt/enc-data/catalogue.sqlite /opt/enc-cache /usr/bin/ogr2ogr 4
-python3 /opt/enc/scripts/audit_edges.py --catalogue /opt/enc-data/catalogue.sqlite \
-  --cache /opt/enc-cache --out /tmp/edge-audit.json
+container/operator.sh python3 /opt/enc/scripts/audit_edges.py --catalogue /opt/enc-data/catalogue.sqlite \
+  --cache /opt/enc-cache --out /opt/enc-cache/edge-audit.json
 ```
 
 The audit checks every expected cell fingerprint, revision, SQLite integrity and edge/feature and point-quality foreign-key relationships, then reports counts and unmatched lookups. Rerunning prewarm reuses already published sidecars. Publish matching styles and invalidate generated tiles whenever the portrayal revision changes. The demo script performs prewarm and then seeds its bounded WMTS plan. No global image/cache pruning is performed.
