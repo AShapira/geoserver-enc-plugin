@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ENC catalog manager</title><link rel="stylesheet" href="/manager.css"><script src="/manager.js" defer></script>
+</head>
+<body>
+<header><h1>ENC catalog manager</h1><span id="activity" role="status"></span></header>
+<main>
+  <aside><div class="bar"><h2>Providers</h2><button id="add">Add provider</button></div>
+    <nav id="providers" aria-label="Chart providers"></nav>
+  </aside>
+  <article>
+    <p id="error" role="alert" hidden></p>
+    <section id="detail" hidden>
+      <div class="bar"><h2 id="name"></h2><button id="edit">Edit provider</button></div>
+      <p id="credit"></p><p id="source"></p><button class="primary" id="acquire"></button>
+    </section>
+    <section><h2>Saved exchanges</h2><div id="snapshots"></div></section>
+    <section><h2>Job history</h2><div id="jobs"></div><div id="logPanel" hidden><h3>Job log</h3><pre id="log"></pre></div></section>
+  </article>
+</main>
+<dialog id="dialog">
+<form id="providerForm">
+  <h2 id="formTitle">Add provider</h2>
+  <label for="location">Source location</label>
+  <input id="location" required autofocus aria-describedby="locationHelp">
+  <p class="muted" id="locationHelp">Use a direct ZIP download URL, a local ZIP file, or an exchange folder on this machine.</p>
+  <label for="displayName">Display name (optional)</label><input id="displayName">
+  <p id="formError" role="alert" hidden></p>
+  <div class="actions"><button type="button" id="cancel">Cancel</button><button class="primary" type="submit">Save provider</button></div>
+</form></dialog>
+</body></html>

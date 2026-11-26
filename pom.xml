@@ -1,6 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.enc</groupId><artifactId>gs-s57</artifactId><version>0.5.0</version>
+  <groupId>org.enc</groupId><artifactId>gs-s57</artifactId><version>0.6.0</version>
   <name>GDAL S-57 GeoServer store</name>
   <properties><project.build.outputTimestamp>2026-01-01T00:00:00Z</project.build.outputTimestamp><maven.compiler.release>17</maven.compiler.release><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding><geoserver.version>3.0.2</geoserver.version><geoserver.wms.artifact>gs-wms-core</geoserver.wms.artifact><geotools.version>35.2</geotools.version></properties>
   <repositories><repository><id>osgeo</id><url>https://repo.osgeo.org/repository/release/</url></repository></repositories>

@@ -1,10 +1,27 @@
 # GeoServer S-57 ENC plugin
 
-A read-only GeoServer S-57 plugin backed by GDAL's S57 reader. Release **0.5.0** installs a shared ENC style library before any charts are loaded and includes an [air-gap build and deployment kit](docs/airgap-deployment.md) maintained on `main`. Tested Java targets are **GeoServer 2.28.0 / GeoTools 34.0** and **GeoServer 3.0.2 / GeoTools 35.2**; other versions require rebuilding and validation. Each catalogue store serves a complete S-57 exchange set through WMS and GeoWebCache WMTS. It indexes actual chart coverage, selects cells by scale and clips overlapping coverage. Adjacent updates are applied to immutable, indexed GeoPackage snapshots. Single `.000` stores remain supported.
+A read-only GeoServer S-57 plugin backed by GDAL's S57 reader. Release **0.6.0** adds a standalone catalog manager for downloading ENC exchange sets, preparing catalogs offline, and exporting them for deployment. The plugin installs a shared ENC style library before any charts are loaded and includes an [air-gap build and deployment kit](docs/airgap-deployment.md) maintained on `main`. Tested Java targets are **GeoServer 2.28.0 / GeoTools 34.0** and **GeoServer 3.0.2 / GeoTools 35.2**; other versions require rebuilding and validation. Each catalogue store serves a complete S-57 exchange set through WMS and GeoWebCache WMTS. It indexes actual chart coverage, selects cells by scale and clips overlapping coverage. Adjacent updates are applied to immutable, indexed GeoPackage snapshots. Single `.000` stores remain supported.
 
 The supplied portrayal compiler uses pinned OpenCPN S-52 colours, raster symbols, lookup tables, and HPGL patterns/lines. It supplies depth bands, selected safety contours, compound sounding glyphs, light sectors/characteristics, topmarks, formatted labels, scale filtering, and day/dusk/night presets. Versioned [native edge metadata](docs/edge-metadata.md) handles conditional shared-edge priorities, masks, spatial-quality segments and precomputed lookup selection. **Portrayal is experimental and incomplete; this is not an ECDIS implementation or a claim of S-52 conformance.** See [portrayal coverage](docs/portrayal.md) and the [latest OpenCPN comparison and CPU/RAM/disk measurements](docs/portrayal-2026-11-17.md).
 
 The plugin includes an **ENC viewer and search demo** at `<geoserver-base>/enc/viewer/index.html`. Publish a feature type from any S-57 datastore, then open **Layers** to display it or **Search objects** to find features in the current map area. Named ENC chart groups appear in **Chart**. The viewer uses the user's GeoServer permissions and works offline.
+
+## Prepare catalogs in a local browser
+
+From this checkout on Linux, run the following commands. The first prepares the Podman operator image and plugin assets while connected. Docker users can set `CONTAINER_ENGINE=docker`. Preparation runs independently of a GeoServer process.
+
+```bash
+container/runtime.sh
+./enc manager --data-dir "$HOME/enc-library"
+```
+
+Open the loopback URL printed by the manager (default port 18765). Choose one of the six built-in providers or use **Add provider** and enter a direct HTTP(S) ZIP URL, a local ZIP path, or a local S-57 exchange folder. The local path is on the machine running the manager. You can edit a custom provider’s display name or location later.
+
+1. **Download exchange** or **Import exchange** saves a dated copy with its source and checksum. Keep base cells and numbered updates together. An existing exchange manifest in the source root retains its inventory rules.
+2. **Prepare catalog** on a saved exchange builds its SQLite index, GeoPackages, and edge data offline. Follow the job log or close the browser and return later. Failed jobs can be retried. Each refresh saves a new source snapshot.
+3. **Export for transfer** writes a verified ZIP under the data directory’s `exports/` folder. Copy it to a matching installation, compare its SHA-256 to the value shown in the manager, then run `./enc deploy --prepared /path/to/package.zip`. The package carries its destination workspace.
+
+Keep the manager data directory between runs. Allow space for the source snapshot, staged exchange, converted cache, and export. The [air-gap deployment guide](docs/airgap-deployment.md) covers disconnected installations.
 
 ## Deploy an ENC collection
 
@@ -103,7 +120,7 @@ The bootstrap preserves an existing demo data directory. Stop the foreground ser
 Build both plugin releases with `container/build-plugins.sh`. Install the matching ZIP using the [official image procedure](airgap/README.md) or the [Kartoza 2.28.0 procedure](docs/kartoza-2.28.0.md). For disconnected sites, [export the stock image, plugin and operator kit](docs/airgap-deployment.md). For GeoServer Cloud, use the [release-specific service image build](cloud/README.md).
 
 1. Use a tested target with Java 17 or 21, and GDAL 3.2+ with S57, GPKG and SQLite drivers (tested with 3.8.4 in containers and 3.11.5 in development). Ensure GDAL's data dictionaries and PROJ data are available to the server process.
-2. Build with `mvn package` for GeoServer 3.0.2, or `mvn -Pgeoserver-2.28 package` for 2.28.0. Stop GeoServer, remove an older S-57 plugin JAR if upgrading, copy **only** `target/gs-s57-0.5.0.jar` into `WEB-INF/lib`, then restart. The tested binaries already contain `gt-geopkg` and its dependencies; do not replace GeoTools JARs. If your custom distribution omits them, install its matching GeoPackage support first. The first startup installs the [shared ENC style library](docs/shared-styles.md), including all three palettes, before any chart store exists.
+2. Build with `mvn package` for GeoServer 3.0.2, or `mvn -Pgeoserver-2.28 package` for 2.28.0. Stop GeoServer, remove an older S-57 plugin JAR if upgrading, copy **only** `target/gs-s57-0.6.0.jar` into `WEB-INF/lib`, then restart. The tested binaries already contain `gt-geopkg` and its dependencies; do not replace GeoTools JARs. If your custom distribution omits them, install its matching GeoPackage support first. The first startup installs the [shared ENC style library](docs/shared-styles.md), including all three palettes, before any chart store exists.
 3. Add a store of type **S-57 ENC (GDAL)**, supplying:
 
 | Parameter | Value |

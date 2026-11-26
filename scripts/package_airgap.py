@@ -20,14 +20,14 @@ def package(destination):
              'docs/plugin-install-validation.json', 'cloud/README.md', 'cloud/build.sh', 'cloud/Dockerfile',
              'cloud/compose.yml', 'cloud/config.Dockerfile', 'cloud/check.py', 'cloud/integrate.py', 'cloud/s57-pom.xml',
              'airgap/README.md', 'airgap/START-HERE.md', 'container/build-plugins.sh', 'container/builder.Dockerfile',
-             'container/operator.sh', 'container/operator.Dockerfile', 'container/demo.sh']
+             'container/runtime.sh', 'container/operator.sh', 'container/operator.Dockerfile', 'container/demo.sh']
     for version in ('2.28.0', '3.0.2'):
         archive = ROOT/'dist'/f'geoserver-{version}-s57-plugin.zip'
         checksum = archive.with_suffix('.zip.sha256')
         if checksum.read_text().strip() != f'{hashlib.sha256(archive.read_bytes()).hexdigest()}  {archive.name}':
             raise ValueError(f'SHA-256 mismatch for {archive}')
         names.extend(str(p.relative_to(ROOT)) for p in (archive, checksum))
-    for directory, pattern in [('src','*'),('portrayal/upstream','*'),('scripts','*.py'),('tests','*.py')]:
+    for directory, pattern in [('manager','*'),('src','*'),('portrayal/upstream','*'),('scripts','*.py'),('tests','*.py')]:
         for path in (ROOT/directory).rglob(pattern):
             if path.is_file() and '__pycache__' not in path.parts:
                 if path.is_symlink() or path.suffix in ('.class', '.pyc'):

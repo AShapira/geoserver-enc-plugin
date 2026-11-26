@@ -3,6 +3,7 @@ import fcntl
 import hashlib
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 import shutil
@@ -24,12 +25,34 @@ def locked(path):
         yield
 
 
-def stage(source, workspace, workers):
+def generation_id(digest, runtime=None):
+    identity = 'enc-index-2:' + digest
+    if runtime is not None:
+        identity += ':' + json.dumps(runtime, sort_keys=True, separators=(',', ':'))
+    return hashlib.sha256(identity.encode()).hexdigest()
+
+
+def run_generation(command):
+    generation = None
+    with subprocess.Popen(command, stdout=subprocess.PIPE, text=True) as child:
+        for line in child.stdout:
+            print(line, end='', flush=True)
+            match = re.fullmatch(r'ENC_GENERATION=([0-9a-f]{64})', line.strip())
+            if match:
+                generation = match[1]
+        if child.wait() or generation is None:
+            raise RuntimeError('Catalog staging failed. See the preceding operation log.')
+    return generation
+
+
+def stage(source, workspace, workers, expected_digest=None, runtime=None):
     os.environ['S57_CSV']='/opt/enc/s57'
     parent = ROOT / workspace
     with locked(parent / '.stage.lock'):
         digest = tree_digest(source)
-        generation = hashlib.sha256(('enc-index-2:' + digest).encode()).hexdigest()
+        if expected_digest is not None and digest != expected_digest:
+            raise ValueError("Saved exchange checksum has changed")
+        generation = generation_id(digest, runtime)
         target = parent / generation
         if not target.exists():
             with tempfile.TemporaryDirectory(dir=parent) as tmp:
@@ -39,6 +62,7 @@ def stage(source, workspace, workers):
                 if tree_digest(copy) != digest:
                     raise ValueError('Exchange changed while staging')
                 try:
+                    print('Indexing exchange cells', flush=True)
                     inventory(copy, out, workers, digest)
                 except Exception:
                     report = out/'catalogue-report.json'
@@ -53,15 +77,22 @@ def stage(source, workspace, workers):
         recipe = hashlib.sha256(jar.read_bytes()+subprocess.check_output([str(converter),'--version'])).hexdigest()
         if not stamp.exists() or stamp.read_text() != recipe:
             index = target/'catalogue.sqlite'
+            print('Converting cells to GeoPackages', flush=True)
             warm(index,cache,converter,workers)
             with (target/'edge-report.log').open('w') as report:
-                result = subprocess.run(['java','-Xmx1g','-cp',str(jar) + ':/usr/local/tomcat/webapps/geoserver/WEB-INF/lib/*',
+                print('Building edge data', flush=True)
+                with subprocess.Popen(['java','-Xmx1g','-cp',str(jar) + ':/usr/local/tomcat/webapps/geoserver/WEB-INF/lib/*',
                     'org.enc.geoserver.EdgeCache',str(index),str(cache),str(converter),str(workers)],
-                    stdout=report,stderr=subprocess.STDOUT)
-            if result.returncode:
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True) as child:
+                    for line in child.stdout:
+                        print(line, end='', flush=True)
+                        report.write(line)
+                    status = child.wait()
+            if status:
                 raise RuntimeError('Edge validation failed: '+str(target/'edge-report.log'))
             stamp.write_text(recipe)
         print('ENC_GENERATION=' + generation, flush=True)
+        return target
 
 
 def publish(workspace, generation, title, view=None):

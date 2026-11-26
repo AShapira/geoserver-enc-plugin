@@ -18,9 +18,14 @@ inputs = prep.add_mutually_exclusive_group(required=True)
 inputs.add_argument('--provider', choices=PROFILES)
 inputs.add_argument('--archive', nargs='+', type=Path)
 prep.add_argument('--out', type=Path, required=True)
+manager = commands.add_parser('manager', help='Open the local catalog manager')
+manager.add_argument('--data-dir', type=Path, required=True)
+manager.add_argument('--port', type=int, default=18765)
 deploy = commands.add_parser('deploy')
-deploy.add_argument('directory', type=Path)
-deploy.add_argument('--workspace', required=True)
+source_group = deploy.add_mutually_exclusive_group(required=True)
+source_group.add_argument('directory', type=Path, nargs='?')
+source_group.add_argument('--prepared', type=Path, metavar='PACKAGE')
+deploy.add_argument('--workspace')
 deploy.add_argument('--title')
 deploy.add_argument('--view', nargs=3, type=float, metavar=('LONGITUDE','LATITUDE','ZOOM'), help='rendering check location and integer Web Mercator zoom')
 deploy.add_argument('--container', default=os.environ.get('ENC_CONTAINER','geoserver-enc'))
@@ -28,16 +33,31 @@ deploy.add_argument('--workers', default=4, type=int)
 a = parser.parse_args()
 if a.command == 'prepare':
     prepare(a.out, a.provider, a.archive)
+elif a.command == 'manager':
+    from manager_http import serve
+    serve(a.data_dir, a.port)
 else:
-    if not re.fullmatch('[A-Za-z][A-Za-z0-9_]*',a.workspace) or not 1 <= a.workers <= 16:
+    if a.prepared:
+        from prepared import header
+        import zipfile
+        try:
+            with zipfile.ZipFile(a.prepared) as archive:
+                package = header(archive)
+        except (ValueError, OSError, KeyError, TypeError, zipfile.BadZipFile) as error:
+            parser.error(f'Invalid prepared package: {error}')
+        if a.workspace and a.workspace != package['workspace']:
+            parser.error('Use the workspace stored in the prepared package')
+        a.workspace = package['workspace']
+        a.title = a.title or package.get('title')
+    if not a.workspace or not re.fullmatch('[A-Za-z][A-Za-z0-9_]*',a.workspace) or not 1 <= a.workers <= 16:
         parser.error('Use a simple workspace name and 1–16 workers')
     if a.view:
         lon,lat,zoom = a.view
         if not (-180 <= lon <= 180 and -85 <= lat <= 85 and zoom.is_integer() and 2 <= zoom <= 20):
             parser.error('Use longitude ±180, latitude ±85 and zoom 2–20')
         a.view = [lon,lat,int(zoom)]
-    source = a.directory.resolve(strict=True)
-    if not source.is_dir():
+    source = (a.prepared or a.directory).resolve(strict=True)
+    if not a.prepared and not source.is_dir():
         parser.error('Supply an extracted exchange directory')
     engine = os.environ.get('CONTAINER_ENGINE','podman')
     info, = json.loads(subprocess.check_output([engine,'inspect',a.container]))
@@ -46,16 +66,18 @@ else:
         parser.error('Recreate the ENC server with container/demo.sh to configure its operator image')
     common = ['python3','/opt/enc/scripts/deployment.py']
     command = [engine,'run','--rm','--pull=never','--network','none','--volumes-from',a.container,
-        '--volume',f'{source}:/input:ro','--entrypoint',common[0],operator,common[1],
-        'stage','/input',a.workspace,str(a.workers)]
-    generation = None
-    with subprocess.Popen(command, stdout=subprocess.PIPE, text=True) as child:
-        for line in child.stdout:
-            print(line, end='', flush=True)
-            if re.fullmatch(r'ENC_GENERATION=[0-9a-f]{64}',line.strip()):
-                generation = line.strip().split('=')[1]
-        if child.wait() or generation is None:
-            sys.exit('Exchange staging failed')
+        '--volume',f'{source}:/input:ro']
+    if a.prepared:
+        scripts = Path(__file__).resolve().parent/'scripts'
+        command += ['--volume', f'{scripts}:/opt/enc/scripts:ro', '--entrypoint', common[0], operator,
+                    '/opt/enc/scripts/prepared.py', 'install', '/input', a.workspace]
+    else:
+        command += ['--entrypoint', common[0], operator, common[1], 'stage', '/input', a.workspace, str(a.workers)]
+    from deployment import run_generation
+    try:
+        generation = run_generation(command)
+    except RuntimeError as error:
+        sys.exit(str(error))
     operator_script = Path(__file__).resolve().parent / 'container/operator.sh'
     subprocess.run([operator_script,*common,'publish',a.workspace,generation,a.title or '',json.dumps(a.view)],
                    env={**os.environ, 'ENC_CONTAINER': a.container}, check=True)

@@ -14,4 +14,6 @@ container/demo.sh --offline --empty
 ./enc deploy /absolute/path/to/local/exchange --workspace local_enc
 ```
 
+For a catalog exported by the manager, use `./enc deploy --prepared /transfer/catalog.zip` in place of the exchange-directory command above. Compare `sha256sum /transfer/catalog.zip` to the checksum shown in the manager before deployment.
+
 Open the chart viewer at http://127.0.0.1:18080/geoserver/enc/viewer/index.html. For Kartoza or a standalone WAR use the [extension install manual](airgap/README.md). For optional offline compilation and transfer details see the [air-gap guide](docs/airgap-deployment.md).

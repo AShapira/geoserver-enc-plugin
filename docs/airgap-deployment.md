@@ -21,3 +21,16 @@ container/demo.sh --offline --empty --recreate
 For a new chart edition, prepare and transfer the complete exchange directory, then run the same deploy command for its workspace. The operator stages and validates the new generation before switching the store. An offline rehearsal can use a single local exchange. The full NOAA launcher downloads chart inputs when its catalogue volume is empty.
 
 To start the NOAA demo offline, stage the matched `ENCProdCat.xml` and `All_ENCs.zip` files in the catalogue volume’s `downloads/` directory. For the default container the volume name is `geoserver-enc-catalogue`. Run `container/demo.sh --offline` to index, publish, prewarm and seed that delivery. The offline launcher checks the preloaded images and archives before using them.
+
+## Transfer a converted catalog
+
+On the preparation machine, run `./enc manager --data-dir "$HOME/enc-library"`, prepare a saved exchange and select **Export for transfer**. Take the resulting ZIP and its displayed SHA-256 to the destination. Use matching plugin and operator assets from the install kit. The package contains the source cells with updates, inventory, converted GeoPackages, native edge data and processing reports.
+
+After starting the destination server with `container/demo.sh --offline --empty`, run:
+
+```bash
+sha256sum /transfer/catalog.zip   # Compare with the checksum shown at export.
+./enc deploy --prepared /transfer/catalog.zip
+```
+
+Deployment checks the file hashes and conversion runtime, installs the generation at the same container path used for conversion, and publishes the workspace recorded in the package. Repeating the command verifies the installed generation and retries publication. A different workspace name changes the cache keys. To use another workspace, deploy the source exchange through the regular preparation workflow.

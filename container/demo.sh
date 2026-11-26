@@ -13,31 +13,10 @@ recreate=false
 for arg in "$@"; do
   case "$arg" in --offline) offline=true ;; --empty) empty=true ;; --recreate) recreate=true ;; *) echo "Unknown option: $arg" >&2; exit 2 ;; esac
 done
-if "$offline"; then
-  "$engine" image inspect "$image" "$operator" >/dev/null
-else
-  "$engine" image inspect "$image" >/dev/null 2>&1 || "$engine" pull "$image"
-  "$engine" image inspect "$operator" >/dev/null 2>&1 || "$engine" build -f container/operator.Dockerfile -t "$operator" .
-  [[ -s dist/$archive ]] || container/build-plugins.sh
-fi
-(cd dist && sha256sum -c "$archive.sha256")
-stock_id=$("$engine" image inspect --format '{{.Id}}' "$image")
+runtime_args=()
+if "$offline"; then runtime_args+=(--offline); fi
+assets=$(container/runtime.sh "${runtime_args[@]}")
 zip_hash=$(sha256sum "dist/$archive" | cut -d' ' -f1)
-assets="$PWD/dist/runtime/${stock_id#sha256:}-$zip_hash"
-if [[ ! -d $assets ]]; then
-  mkdir -p "$(dirname "$assets")"
-  stage=$(mktemp -d "$(dirname "$assets")/staging.XXXXXXXX")
-  trap 'rm -rf -- "$stage"' EXIT
-  chmod 755 "$stage"
-  "$engine" run --rm --network none --volume "$stage:/opt/enc/s57" --volume "$PWD/dist/$archive:/plugin.zip:ro" \
-    --entrypoint sh "$operator" -ec '
-      ogrinfo --format S57 >/dev/null && ogrinfo --format GPKG >/dev/null && ogrinfo --format SQLite >/dev/null
-      python3 /opt/enc/scripts/inland_dictionary.py /usr/share/gdal /opt/enc/s57
-      test -s /opt/enc/s57/s57objectclasses.csv
-      unzip -p /plugin.zip "*.jar" > /opt/enc/s57/gs-s57.jar.tmp
-      mv /opt/enc/s57/gs-s57.jar.tmp /opt/enc/s57/gs-s57.jar'
-  if ! mv -T "$stage" "$assets"; then test -s "$assets/gs-s57.jar"; fi
-fi
 operator_id=$("$engine" image inspect --format '{{.Id}}' "$operator")
 data_volume=$name-data
 cache_volume=$name-cache
